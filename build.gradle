@@ -1,0 +1,114 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.5.0'
+    }
+}
+
+apply plugin: 'org.unbroken-dome.test-sets'
+apply plugin: 'java'
+apply plugin: 'idea'
+
+idea {
+    project {
+        jdkName = '1.8'
+        languageLevel = '1.8'
+    }
+}
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+repositories {
+    mavenCentral()
+}
+
+//sourceSets {
+//    testInfrastructure {
+//        java {
+//            srcDir 'src/test-infrastructure/java'
+//        }
+//        resources {
+//            srcDir 'src/test-infrastructure/resources'
+//        }
+//        compileClasspath += sourceSets.main.runtimeClasspath
+//    }
+//}
+
+testSets {
+    // todo: turn this into source-set
+    testInfrastructure {
+        dirName = 'test-infrastructure'
+    }
+
+    integrationTest {
+        dirName = 'test-integration'
+        extendsFrom testInfrastructure
+    }
+
+//    stabilityTest {
+//        dirName = 'test-stability'
+//        extendsFrom testInfrastructure
+//    }
+
+    systemTest {
+        dirName = 'test-system'
+        extendsFrom testInfrastructure
+    }
+}
+integrationTest.outputs.upToDateWhen { false }
+//stabilityTest.outputs.upToDateWhen { false }
+systemTest.outputs.upToDateWhen { false }
+
+check.dependsOn integrationTest
+//check.dependsOn stabilityTest
+integrationTest.mustRunAfter test
+//stabilityTest.mustRunAfter test
+systemTest.mustRunAfter test
+
+dependencies {
+    compile 'commons-io:commons-io:2.5'
+    compile 'com.google.guava:guava:20.0'
+    compile 'com.github.matejtymes:javafixes:1.2.0.rc1'
+
+    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'ch.qos.logback:logback-classic:1.1.9'
+
+    compile 'com.fasterxml.jackson.module:jackson-module-afterburner:2.9.0'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.0'
+
+    compile 'org.mongodb:mongo-java-driver:3.5.0'
+    compile 'com.sparkjava:spark-core:2.6.0'
+
+    testCompile 'com.github.cschoell:junit-dynamicsuite:0.2.5'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile 'org.mockito:mockito-core:2.8.47'
+    testCompile 'org.skyscreamer:jsonassert:1.5.0'
+
+    testInfrastructureCompile 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.1.1'
+    integrationTestCompile 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.1.1'
+//    stabilityTestCompile 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.1.1'
+    systemTestCompile 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.1.1'
+
+    systemTestCompile 'org.asynchttpclient:async-http-client:2.0.35'
+//    systemTestCompile 'javax.ws.rs:javax.ws.rs-api:2.1'
+    systemTestCompile 'org.jboss.resteasy:resteasy-jaxrs:3.1.4.Final'
+
+
+    testCompile sourceSets.testInfrastructure.output
+    integrationTestCompile sourceSets.testInfrastructure.output
+//    stabilityTestCompile sourceSets.testInfrastructure.output
+    systemTestCompile sourceSets.testInfrastructure.output
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.8.1'
+}
+
+tasks.withType(Test) {
+    reports.html.setDestination(file("${reporting.baseDir}/${name}"))
+}
