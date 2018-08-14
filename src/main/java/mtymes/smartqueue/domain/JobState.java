@@ -1,9 +1,8 @@
 package mtymes.smartqueue.domain;
 
-public enum JobRequestState {
+public enum JobState {
 
-    QUEUED,
-    TAKEN,
+    CREATED,
     SUCCEEDED,
     FAILED
 

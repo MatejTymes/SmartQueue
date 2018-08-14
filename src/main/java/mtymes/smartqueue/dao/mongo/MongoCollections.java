@@ -20,7 +20,7 @@ public class MongoCollections {
                 jobs -> {
                     jobs.createIndex(
                             ascending(
-                                    MongoJobDao.STATUS
+                                    MongoJobDao.STATE
 //                                    ,
 //                                    MongoJobDao.UPDATED_AT_TIME
                             ),

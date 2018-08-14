@@ -1,30 +1,30 @@
 package mtymes.smartqueue.dao.mongo;
 
-import mtymes.common.time.Clock;
-import mtymes.smartqueue.dao.TestIdGenerator;
-import mtymes.smartqueue.domain.Job;
-import mtymes.smartqueue.domain.JobId;
-import mtymes.smartqueue.domain.JobRequestId;
-import mtymes.test.OptionalMatcher;
+import mtymes.smartqueue.domain.*;
 import mtymes.test.db.EmbeddedDB;
 import mtymes.test.db.MongoManager;
+import mtymes.test.time.FixedClock;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
+import static java.util.Collections.emptyList;
+import static javafixes.common.CollectionUtil.newList;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.jobRequestsCollection;
-import static mtymes.test.OptionalMatcher.isNotPresent;
-import static mtymes.test.OptionalMatcher.isPresent;
-import static org.hamcrest.Matchers.equalTo;
+import static mtymes.test.OptionalMatcher.*;
+import static mtymes.test.Random.randomJobRequestId;
+import static mtymes.test.Random.randomMillis;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 public class MongoJobDaoIntegrationTest {
 
     private static EmbeddedDB db;
-    private static Clock clock = new Clock(); // todo: maybe change to use StubClock
+    private static FixedClock clock = new FixedClock();
 
     private static MongoJobDao jobDao;
 
@@ -44,8 +44,32 @@ public class MongoJobDaoIntegrationTest {
         MongoManager.release(db);
     }
 
+
     @Test
-    public void shouldNotBeAbleToTakeNextJobIfNoJobRequestExists() {
+    public void shouldNotLoadNonExistingJobRequest() {
+        assertThat(jobDao.loadJobRequest(randomJobRequestId()), isNotPresent());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateJobRequest() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+
+        // When
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        // Then
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                submissionTime,
+                JobRequestState.QUEUED,
+                emptyList()
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldNotBeAbleToTakeJobIfNoJobRequestExists() {
         // When
         Optional<Job> job = jobDao.takeNextAvailableJob();
 
@@ -55,12 +79,91 @@ public class MongoJobDaoIntegrationTest {
 
     @Test
     public void shouldBeAbleToTakeJobForSubmittedJobRequest() {
-        // When
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
         JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        // When
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
         Optional<Job> job = jobDao.takeNextAvailableJob();
 
         // Then
         assertThat(job, isPresent());
-        assertThat(job.get(), equalTo(new Job(jobRequestId, job.get().jobId)));
+        Job expectedJob = new Job(
+                jobRequestId,
+                job.get().jobId,
+                jobCreationTime,
+                jobCreationTime,
+                JobState.CREATED
+        );
+        assertThat(job, isPresentAndEqualTo(expectedJob));
+
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                jobCreationTime,
+                JobRequestState.TAKEN,
+                newList(expectedJob)
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldBeAbleToMarkJobAsSucceeded() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
+        Job job = jobDao.takeNextAvailableJob().get();
+
+        // When
+        ZonedDateTime succeededTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = jobDao.markAsSucceeded(job.jobId);
+
+        // Then
+        assertThat(wasSuccess, is(true));
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                succeededTime,
+                JobRequestState.SUCCEEDED,
+                newList(new Job(
+                        jobRequestId,
+                        job.jobId,
+                        jobCreationTime,
+                        succeededTime,
+                        JobState.SUCCEEDED
+                ))
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldBeAbleToMarkJobAsFailed() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
+        Job job = jobDao.takeNextAvailableJob().get();
+
+        // When
+        ZonedDateTime succeededTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = jobDao.markAsFailed(job.jobId);
+
+        // Then
+        assertThat(wasSuccess, is(true));
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                succeededTime,
+                JobRequestState.FAILED,
+                newList(new Job(
+                        jobRequestId,
+                        job.jobId,
+                        jobCreationTime,
+                        succeededTime,
+                        JobState.FAILED
+                ))
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
     }
 }
