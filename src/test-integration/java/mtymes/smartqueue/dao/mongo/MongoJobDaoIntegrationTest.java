@@ -116,7 +116,7 @@ public class MongoJobDaoIntegrationTest {
         Job job = jobDao.takeNextAvailableJob().get();
 
         // When
-        ZonedDateTime succeededTime = clock.increaseBy(randomMillis());
+        ZonedDateTime successTime = clock.increaseBy(randomMillis());
         boolean wasSuccess = jobDao.markAsSucceeded(job.jobId);
 
         // Then
@@ -124,13 +124,46 @@ public class MongoJobDaoIntegrationTest {
         JobRequest expectedJobRequest = new JobRequest(
                 jobRequestId,
                 submissionTime,
-                succeededTime,
+                successTime,
                 JobRequestState.SUCCEEDED,
                 newList(new Job(
                         jobRequestId,
                         job.jobId,
                         jobCreationTime,
-                        succeededTime,
+                        successTime,
+                        JobState.SUCCEEDED
+                ))
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldNotBeAbleToMarkJobAsSucceededTwice() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
+        Job job = jobDao.takeNextAvailableJob().get();
+
+        ZonedDateTime successTime = clock.increaseBy(randomMillis());
+        jobDao.markAsSucceeded(job.jobId);
+
+        // When
+        ZonedDateTime secondSuccessTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = jobDao.markAsSucceeded(job.jobId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                successTime,
+                JobRequestState.SUCCEEDED,
+                newList(new Job(
+                        jobRequestId,
+                        job.jobId,
+                        jobCreationTime,
+                        successTime,
                         JobState.SUCCEEDED
                 ))
         );
@@ -146,7 +179,7 @@ public class MongoJobDaoIntegrationTest {
         Job job = jobDao.takeNextAvailableJob().get();
 
         // When
-        ZonedDateTime succeededTime = clock.increaseBy(randomMillis());
+        ZonedDateTime failureTime = clock.increaseBy(randomMillis());
         boolean wasSuccess = jobDao.markAsFailed(job.jobId);
 
         // Then
@@ -154,13 +187,112 @@ public class MongoJobDaoIntegrationTest {
         JobRequest expectedJobRequest = new JobRequest(
                 jobRequestId,
                 submissionTime,
-                succeededTime,
+                failureTime,
                 JobRequestState.FAILED,
                 newList(new Job(
                         jobRequestId,
                         job.jobId,
                         jobCreationTime,
-                        succeededTime,
+                        failureTime,
+                        JobState.FAILED
+                ))
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldNotBeAbleToMarkJobAsFailedTwice() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
+        Job job = jobDao.takeNextAvailableJob().get();
+
+        ZonedDateTime failureTime = clock.increaseBy(randomMillis());
+        jobDao.markAsFailed(job.jobId);
+
+        // When
+        ZonedDateTime secondFailureTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = jobDao.markAsFailed(job.jobId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                failureTime,
+                JobRequestState.FAILED,
+                newList(new Job(
+                        jobRequestId,
+                        job.jobId,
+                        jobCreationTime,
+                        failureTime,
+                        JobState.FAILED
+                ))
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldNotFailSucceededJob() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
+        Job job = jobDao.takeNextAvailableJob().get();
+
+        ZonedDateTime successTime = clock.increaseBy(randomMillis());
+        jobDao.markAsSucceeded(job.jobId);
+
+        // When
+        ZonedDateTime failureTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = jobDao.markAsFailed(job.jobId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                successTime,
+                JobRequestState.SUCCEEDED,
+                newList(new Job(
+                        jobRequestId,
+                        job.jobId,
+                        jobCreationTime,
+                        successTime,
+                        JobState.SUCCEEDED
+                ))
+        );
+        assertThat(jobDao.loadJobRequest(jobRequestId), isPresentAndEqualTo(expectedJobRequest));
+    }
+
+    @Test
+    public void shouldNotSucceededFailedJob() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        JobRequestId jobRequestId = jobDao.submitJobRequest();
+
+        ZonedDateTime jobCreationTime = clock.increaseBy(randomMillis());
+        Job job = jobDao.takeNextAvailableJob().get();
+
+        ZonedDateTime failureTime = clock.increaseBy(randomMillis());
+        jobDao.markAsFailed(job.jobId);
+
+        // When
+        ZonedDateTime successTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = jobDao.markAsSucceeded(job.jobId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        JobRequest expectedJobRequest = new JobRequest(
+                jobRequestId,
+                submissionTime,
+                failureTime,
+                JobRequestState.FAILED,
+                newList(new Job(
+                        jobRequestId,
+                        job.jobId,
+                        jobCreationTime,
+                        failureTime,
                         JobState.FAILED
                 ))
         );

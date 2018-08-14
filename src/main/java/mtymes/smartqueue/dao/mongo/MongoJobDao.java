@@ -6,7 +6,6 @@ import mtymes.common.mongo.DocWrapper;
 import mtymes.common.time.Clock;
 import mtymes.smartqueue.dao.JobDao;
 import mtymes.smartqueue.domain.*;
-import org.apache.commons.lang3.NotImplementedException;
 import org.bson.Document;
 
 import java.time.ZonedDateTime;
@@ -94,7 +93,6 @@ public class MongoJobDao implements JobDao {
         });
     }
 
-    // todo: test this - can't do it twice, can't change failed one
     @Override
     public boolean markAsSucceeded(JobId jobId) {
         ZonedDateTime now = clock.now();
@@ -120,7 +118,6 @@ public class MongoJobDao implements JobDao {
         return modifiedCount == 1;
     }
 
-    // todo: test this - can't do it twice, can't change succeeded one
     @Override
     public boolean markAsFailed(JobId jobId) {
         ZonedDateTime now = clock.now();

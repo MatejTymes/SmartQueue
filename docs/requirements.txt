@@ -1,7 +1,7 @@
-1. submit jobRequest
-2. take next available job
-3. mark job as succeeded
-4. mark job as failed
+                                                                1. submit jobRequest
+                                                                2. take next available job
+                                                                3. mark job as succeeded
+                                                                4. mark job as failed
 5. add retry ability
 5. jobRequest has body
 6. define client api
