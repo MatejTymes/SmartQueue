@@ -1,16 +1,13 @@
 package mtymes.test;
 
-import mtymes.smartqueue.domain.JobId;
-import mtymes.smartqueue.domain.JobRequestId;
+import mtymes.smartqueue.domain.RunId;
+import mtymes.smartqueue.domain.TaskId;
 
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static mtymes.smartqueue.domain.JobId.jobId;
-import static mtymes.smartqueue.domain.JobRequestId.jobRequestId;
 
 public class Random {
 
@@ -39,12 +36,12 @@ public class Random {
         return Duration.ofMillis(randomLong(0, 100_000));
     }
 
-    public static JobRequestId randomJobRequestId() {
-        return jobRequestId(randomUUID());
+    public static TaskId randomTaskId() {
+        return TaskId.taskId(randomUUID());
     }
 
-    public static JobId randomJobId() {
-        return jobId(randomUUID());
+    public static RunId randomRunId() {
+        return RunId.runId(randomUUID());
     }
 
     @SafeVarargs

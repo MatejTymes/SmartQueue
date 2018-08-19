@@ -13,16 +13,16 @@ import static javafixes.common.CollectionUtil.newSet;
 
 public class MongoCollections {
 
-    public static MongoCollection<Document> jobRequestsCollection(MongoDatabase database) {
+    public static MongoCollection<Document> tasksCollection(MongoDatabase database) {
         return getOrCreateCollection(
                 database,
-                "jobRequests",
-                jobs -> {
-                    jobs.createIndex(
+                "tasks",
+                tasks -> {
+                    tasks.createIndex(
                             ascending(
-                                    MongoJobDao.STATE
+                                    MongoTaskDao.STATE
 //                                    ,
-//                                    MongoJobDao.UPDATED_AT_TIME
+//                                    MongoTaskDao.UPDATED_AT_TIME
                             ),
                             new IndexOptions().unique(false)
                     );

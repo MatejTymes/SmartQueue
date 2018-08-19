@@ -1,10 +1,10 @@
 package mtymes.smartqueue.domain;
 
-public enum JobRequestState {
+public enum TaskState {
 
     QUEUED,
     CANCELLED,
-    TAKEN,
+    RUNNING,
     SUCCEEDED,
     FAILED
 

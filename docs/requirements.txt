@@ -1,15 +1,15 @@
                                                                 - submit jobRequest
-                                                                - take next available job
-                                                                - mark job as succeeded
-                                                                - mark job as failed
+                                                                - take next available run
+                                                                - mark run as succeeded
+                                                                - mark run as failed
                                                                 - cancel non running jobRequest
-- when cancelling you need to provide the last JobId
-- rename JobRequest -> Task, Job -> Run
+                                                                - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
+- when cancelling you need to provide the last RunId
 - add retry ability
-- jobRequests are taken based on priority and creation date
+- tasks are going to be run based on priority and creation date
 - implement message grouping
 - implement plug-able limit mechanism
-- jobRequest has body
+- task has body
 - define client api
 - add local jvm client api
 - add rest client api

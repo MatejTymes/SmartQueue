@@ -1,6 +1,6 @@
 package mtymes.smartqueue.domain;
 
-public enum JobState {
+public enum RunState {
 
     CREATED,
     SUCCEEDED,

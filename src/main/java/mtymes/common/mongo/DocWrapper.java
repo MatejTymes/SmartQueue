@@ -2,10 +2,10 @@ package mtymes.common.mongo;
 
 import javafixes.object.DataObject;
 import mtymes.common.time.DateUtil;
-import mtymes.smartqueue.domain.JobId;
-import mtymes.smartqueue.domain.JobRequestId;
-import mtymes.smartqueue.domain.JobRequestState;
-import mtymes.smartqueue.domain.JobState;
+import mtymes.smartqueue.domain.RunId;
+import mtymes.smartqueue.domain.RunState;
+import mtymes.smartqueue.domain.TaskId;
+import mtymes.smartqueue.domain.TaskState;
 import org.bson.Document;
 
 import java.time.ZonedDateTime;
@@ -15,8 +15,8 @@ import java.util.List;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static mtymes.common.time.DateUtil.toZonedDateTime;
-import static mtymes.smartqueue.domain.JobId.jobId;
-import static mtymes.smartqueue.domain.JobRequestId.jobRequestId;
+import static mtymes.smartqueue.domain.RunId.runId;
+import static mtymes.smartqueue.domain.TaskId.taskId;
 
 // todo: mtymes - move outside of common package
 // todo: mtymes - test this
@@ -55,20 +55,20 @@ public class DocWrapper extends DataObject {
         return DocListWrapper.wrap(value);
     }
 
-    public JobRequestId getJobRequestId(String fieldName) {
-        return jobRequestId(getString(fieldName));
+    public TaskId getTaskId(String fieldName) {
+        return taskId(getString(fieldName));
     }
 
-    public JobId getJobId(String fieldName) {
-        return jobId(getString(fieldName));
+    public RunId getRunId(String fieldName) {
+        return runId(getString(fieldName));
     }
 
-    public JobRequestState getJobRequestState(String fieldName) {
-        return JobRequestState.valueOf(getString(fieldName));
+    public TaskState getTaskState(String fieldName) {
+        return TaskState.valueOf(getString(fieldName));
     }
 
-    public JobState getJobState(String fieldName) {
-        return JobState.valueOf(getString(fieldName));
+    public RunState getRunState(String fieldName) {
+        return RunState.valueOf(getString(fieldName));
     }
 
     private <T> T getField(String fieldName, boolean nullAllowed) {
