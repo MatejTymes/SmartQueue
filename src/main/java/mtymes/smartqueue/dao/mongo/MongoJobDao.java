@@ -27,6 +27,8 @@ public class MongoJobDao implements JobDao {
     private static final String UPDATED_AT_TIME = "updatedAt";
     protected static final String STATE = "state";
 
+//    private static final String ATTEMPTS_LEFT = "attemptsLeft";
+
     private static final String JOBS = "jobs";
     private static final String JOB_ID = "jobId";
 
@@ -57,6 +59,26 @@ public class MongoJobDao implements JobDao {
                 .build());
 
         return jobRequestId;
+    }
+
+    @Override
+    public boolean cancelJobRequest(JobRequestId jobRequestId) {
+        ZonedDateTime now = clock.now();
+
+        long modifiedCount = jobRequests.updateOne(
+                docBuilder()
+                        .put(JOB_REQUEST_ID, jobRequestId)
+                        .put(STATE, JobRequestState.QUEUED)
+                        .build(),
+                docBuilder()
+                        .put("$set", docBuilder()
+                                .put(STATE, JobRequestState.CANCELLED)
+                                .put(UPDATED_AT_TIME, now)
+                                .build())
+                        .build()
+        ).getModifiedCount();
+
+        return modifiedCount == 1;
     }
 
     @Override

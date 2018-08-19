@@ -11,6 +11,8 @@ public interface JobDao {
 
     JobRequestId submitJobRequest();
 
+    boolean cancelJobRequest(JobRequestId jobRequestId);
+
     Optional<JobRequest> loadJobRequest(JobRequestId jobRequestId);
 
     Optional<Job> takeNextAvailableJob();

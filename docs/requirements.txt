@@ -1,14 +1,19 @@
-                                                                1. submit jobRequest
-                                                                2. take next available job
-                                                                3. mark job as succeeded
-                                                                4. mark job as failed
-5. add retry ability
-5. jobRequest has body
-6. define client api
-7. add local jvm client api
-8. add rest client api
-9. jobRequests are taken based on priority and creation date
-10. implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
-11. implement retry mechanism
-12. implement ttl mechanism
-13. implement plug-able limit mechanism
+                                                                - submit jobRequest
+                                                                - take next available job
+                                                                - mark job as succeeded
+                                                                - mark job as failed
+                                                                - cancel non running jobRequest
+- when cancelling you need to provide the last JobId
+- rename JobRequest -> Task, Job -> Run
+- add retry ability
+- jobRequests are taken based on priority and creation date
+- implement message grouping
+- implement plug-able limit mechanism
+- jobRequest has body
+- define client api
+- add local jvm client api
+- add rest client api
+- implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
+- implement retry mechanism
+- implement ttl mechanism
+- add orphanage mechanism - if hasn't started after 1 minute consider orphan
