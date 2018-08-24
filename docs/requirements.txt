@@ -17,3 +17,4 @@
 - implement retry mechanism
 - implement ttl mechanism
 - add orphanage mechanism - if hasn't started after 1 minute consider orphan
+- in memory daos - for quick tests

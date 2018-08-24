@@ -1,15 +1,12 @@
 package mtymes.smartqueue.dao;
 
-import mtymes.smartqueue.domain.Run;
-import mtymes.smartqueue.domain.RunId;
-import mtymes.smartqueue.domain.Task;
-import mtymes.smartqueue.domain.TaskId;
+import mtymes.smartqueue.domain.*;
 
 import java.util.Optional;
 
 public interface TaskDao {
 
-    TaskId submitTask();
+    TaskId submitTask(RunConfig runConfig);
 
     boolean cancelTask(TaskId taskId);
 

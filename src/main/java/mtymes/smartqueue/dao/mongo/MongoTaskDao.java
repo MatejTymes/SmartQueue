@@ -25,7 +25,8 @@ public class MongoTaskDao implements TaskDao {
     private static final String UPDATED_AT_TIME = "updatedAt";
     protected static final String STATE = "state";
 
-//    private static final String ATTEMPTS_LEFT = "attemptsLeft";
+    private static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
+    private static final String RUN_ATTEMPTS_LEFT = "attemptsLeft";
 
     private static final String RUNS = "runs";
     private static final String RUN_ID = "runId";
@@ -45,7 +46,7 @@ public class MongoTaskDao implements TaskDao {
     }
 
     @Override
-    public TaskId submitTask() {
+    public TaskId submitTask(RunConfig runConfig) {
         TaskId taskId = TaskId.taskId(randomUUID());
 
         ZonedDateTime now = clock.now();
@@ -53,7 +54,9 @@ public class MongoTaskDao implements TaskDao {
                 .put(TASK_ID, taskId)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
-                .put(STATE, TaskState.QUEUED)
+                .put(STATE, TaskState.SUBMITTED)
+                .put(IS_AVAILABLE_FOR_EXECUTION, true)
+                .put(RUN_ATTEMPTS_LEFT, runConfig.attemptCount)
                 .build());
 
         return taskId;
@@ -66,11 +69,13 @@ public class MongoTaskDao implements TaskDao {
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(TASK_ID, taskId)
-                        .put(STATE, TaskState.QUEUED)
+                        .put(IS_AVAILABLE_FOR_EXECUTION, true)
+                        .put(RUN_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
                 docBuilder()
                         .put("$set", docBuilder()
                                 .put(STATE, TaskState.CANCELLED)
+                                .put(IS_AVAILABLE_FOR_EXECUTION, false)
                                 .put(UPDATED_AT_TIME, now)
                                 .build())
                         .build()
@@ -85,7 +90,13 @@ public class MongoTaskDao implements TaskDao {
 
         RunId runId = RunId.runId(randomUUID());
         Document document = tasks.findOneAndUpdate(
-                doc(STATE, TaskState.QUEUED),
+                // todo: add index for this
+                docBuilder()
+                        // todo: test this
+                        .put(IS_AVAILABLE_FOR_EXECUTION, true)
+                        // todo: test this
+                        .put(RUN_ATTEMPTS_LEFT, doc("$gt", 0))
+                        .build(),
                 docBuilder()
                         .put("$addToSet", doc(RUNS, docBuilder()
                                 .put(RUN_ID, runId)
@@ -93,8 +104,11 @@ public class MongoTaskDao implements TaskDao {
                                 .put(UPDATED_AT_TIME, now)
                                 .put(STATE, RunState.CREATED)
                                 .build()))
+                        .put("$inc", doc(RUN_ATTEMPTS_LEFT, -1))
                         .put("$set", docBuilder()
+                                .put(IS_AVAILABLE_FOR_EXECUTION, false)
                                 .put(STATE, TaskState.RUNNING)
+                                // todo: test this
                                 .put(UPDATED_AT_TIME, now)
                                 .build())
                         .build(),
@@ -156,6 +170,7 @@ public class MongoTaskDao implements TaskDao {
                                 .put(UPDATED_AT_TIME, now)
                                 .put(RUNS + ".$." + STATE, RunState.FAILED)
                                 .put(RUNS + ".$." + UPDATED_AT_TIME, now)
+                                .put(IS_AVAILABLE_FOR_EXECUTION, true)
                                 .build())
                         .build()
         ).getModifiedCount();

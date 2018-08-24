@@ -2,7 +2,7 @@ package mtymes.smartqueue.domain;
 
 public enum TaskState {
 
-    QUEUED,
+    SUBMITTED,
     CANCELLED,
     RUNNING,
     SUCCEEDED,
