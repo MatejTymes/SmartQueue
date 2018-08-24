@@ -92,9 +92,7 @@ public class MongoTaskDao implements TaskDao {
         Document document = tasks.findOneAndUpdate(
                 // todo: add index for this
                 docBuilder()
-                        // todo: test this
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                        // todo: test this
                         .put(RUN_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
                 docBuilder()
@@ -108,7 +106,6 @@ public class MongoTaskDao implements TaskDao {
                         .put("$set", docBuilder()
                                 .put(IS_AVAILABLE_FOR_EXECUTION, false)
                                 .put(STATE, TaskState.RUNNING)
-                                // todo: test this
                                 .put(UPDATED_AT_TIME, now)
                                 .build())
                         .build(),

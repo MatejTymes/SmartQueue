@@ -529,6 +529,24 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
     }
 
+    @Test
+    public void shouldNotRetryOnceTaskBecomesSuccessful() {
+        int attemptCount = randomInt(3, 5);
+
+        TaskId taskId = taskDao.submitTask(new RunConfig(attemptCount));
+        Run run1 = taskDao.createNextAvailableRun().get();
+        taskDao.markAsFailed(run1.runId);
+        Run run2 = taskDao.createNextAvailableRun().get();
+        taskDao.markAsSucceeded(run2.runId);
+
+        // When
+        Optional<Run> noRunAvailable = taskDao.createNextAvailableRun();
+
+        // Then
+        assertThat(noRunAvailable, isNotPresent());
+    }
+
+
     // todo: verify you can not change state of previous runs
 
     private RunConfig commonRunConfig() {

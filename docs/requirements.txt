@@ -5,7 +5,7 @@
                                                                 - cancel non running jobRequest
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
 - when cancelling you need to provide the last RunId
-- add retry ability
+                                                                - add retry ability
 - tasks are going to be run based on priority and creation date
 - implement message grouping
 - implement plug-able limit mechanism
