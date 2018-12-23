@@ -2,10 +2,7 @@ package mtymes.common.mongo;
 
 import javafixes.object.DataObject;
 import mtymes.common.time.DateUtil;
-import mtymes.smartqueue.domain.RunId;
-import mtymes.smartqueue.domain.RunState;
-import mtymes.smartqueue.domain.TaskId;
-import mtymes.smartqueue.domain.TaskState;
+import mtymes.smartqueue.domain.*;
 import org.bson.Document;
 
 import java.time.ZonedDateTime;
@@ -15,6 +12,7 @@ import java.util.List;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static mtymes.common.time.DateUtil.toZonedDateTime;
+import static mtymes.smartqueue.domain.RunGroup.runGroup;
 import static mtymes.smartqueue.domain.RunId.runId;
 import static mtymes.smartqueue.domain.TaskId.taskId;
 
@@ -57,6 +55,10 @@ public class DocWrapper extends DataObject {
 
     public TaskId getTaskId(String fieldName) {
         return taskId(getString(fieldName));
+    }
+
+    public RunGroup getRunGroup(String fieldName) {
+        return runGroup(getString(fieldName));
     }
 
     public RunId getRunId(String fieldName) {

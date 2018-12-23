@@ -21,6 +21,7 @@ import static mtymes.common.mongo.DocWrapper.wrap;
 public class MongoTaskDao implements TaskDao {
 
     private static final String TASK_ID = "_id";
+    private static final String RUN_GROUP = "runGroup";
     private static final String CREATED_AT_TIME = "createdAt";
     private static final String UPDATED_AT_TIME = "updatedAt";
     protected static final String STATE = "state";
@@ -52,6 +53,7 @@ public class MongoTaskDao implements TaskDao {
         ZonedDateTime now = clock.now();
         tasks.insertOne(docBuilder()
                 .put(TASK_ID, taskId)
+                .put(RUN_GROUP, runConfig.runGroup)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
@@ -84,6 +86,7 @@ public class MongoTaskDao implements TaskDao {
         return modifiedCount == 1;
     }
 
+    // todo: fetch based on runGroup as well
     @Override
     public Optional<Run> createNextAvailableRun() {
         ZonedDateTime now = clock.now();
@@ -116,9 +119,11 @@ public class MongoTaskDao implements TaskDao {
         return Optional.ofNullable(document).map(doc -> {
             DocWrapper dbTask = wrap(doc);
             TaskId taskId = dbTask.getTaskId(TASK_ID);
+            RunGroup runGroup = dbTask.getRunGroup(RUN_GROUP);
             DocWrapper dbRun = dbTask.getList(RUNS).lastDoc();
             return toRun(
                     taskId,
+                    runGroup,
                     dbRun
             );
         });
@@ -179,19 +184,22 @@ public class MongoTaskDao implements TaskDao {
         DocWrapper dbTask = wrap(doc);
 
         TaskId taskId = dbTask.getTaskId(TASK_ID);
+        RunGroup runGroup = dbTask.getRunGroup(RUN_GROUP);
 
         return new Task(
                 taskId,
+                runGroup,
                 dbTask.getZonedDateTime(CREATED_AT_TIME),
                 dbTask.getZonedDateTime(UPDATED_AT_TIME),
                 dbTask.getTaskState(STATE),
-                dbTask.getList(RUNS, true).mapDoc(dbRun -> toRun(taskId, dbRun))
+                dbTask.getList(RUNS, true).mapDoc(dbRun -> toRun(taskId, runGroup, dbRun))
         );
     }
 
-    private Run toRun(TaskId taskId, DocWrapper dbRun) {
+    private Run toRun(TaskId taskId, RunGroup runGroup, DocWrapper dbRun) {
         return new Run(
                 taskId,
+                runGroup,
                 dbRun.getRunId(RUN_ID),
                 dbRun.getZonedDateTime(CREATED_AT_TIME),
                 dbRun.getZonedDateTime(UPDATED_AT_TIME),
