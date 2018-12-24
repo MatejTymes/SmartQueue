@@ -4,15 +4,12 @@ import javafixes.object.DataObject;
 
 import java.time.ZonedDateTime;
 
-// todo: mtymes - rename to TaskRun
+// todo: rename to Execution
 public class Run extends DataObject {
 
-    // todo: mtymes - maybe remove taskId
     public final TaskId taskId;
-    // todo: mtymes - maybe remove runGroup and keep just the taskId
-    // todo: mtymes - test this value
     public final RunGroup runGroup;
-    // todo: mtymes rename to TaskRunId
+    // todo: mtymes rename to ExecutionId
     public final RunId runId;
     public final ZonedDateTime createdAt;
     public final ZonedDateTime updatedAt;

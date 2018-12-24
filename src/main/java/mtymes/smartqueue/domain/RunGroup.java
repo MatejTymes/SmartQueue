@@ -5,6 +5,7 @@ import javafixes.object.Microtype;
 
 import java.util.UUID;
 
+// todo: rename to TaskGroup
 public class RunGroup extends Microtype<String> {
 
     private RunGroup(String value) {

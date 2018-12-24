@@ -5,6 +5,7 @@ import javafixes.object.Microtype;
 
 import java.util.UUID;
 
+// todo: rename to ExecutionId
 public class RunId extends Microtype<UUID> {
 
     private RunId(UUID value) {
