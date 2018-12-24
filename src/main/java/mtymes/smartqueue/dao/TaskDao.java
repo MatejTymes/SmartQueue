@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface TaskDao {
 
-    TaskId submitTask(RunConfig runConfig);
+    TaskId submitTask(TaskConfig taskConfig);
 
     boolean cancelTask(TaskId taskId);
 

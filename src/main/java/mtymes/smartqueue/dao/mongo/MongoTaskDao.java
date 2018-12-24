@@ -47,18 +47,18 @@ public class MongoTaskDao implements TaskDao {
     }
 
     @Override
-    public TaskId submitTask(RunConfig runConfig) {
+    public TaskId submitTask(TaskConfig taskConfig) {
         TaskId taskId = TaskId.taskId(randomUUID());
 
         ZonedDateTime now = clock.now();
         tasks.insertOne(docBuilder()
                 .put(TASK_ID, taskId)
-                .put(TASK_GROUP, runConfig.taskGroup)
+                .put(TASK_GROUP, taskConfig.taskGroup)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                .put(RUN_ATTEMPTS_LEFT, runConfig.attemptCount)
+                .put(RUN_ATTEMPTS_LEFT, taskConfig.attemptCount)
                 .build());
 
         return taskId;
