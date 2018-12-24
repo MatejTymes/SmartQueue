@@ -8,16 +8,16 @@ import java.time.ZonedDateTime;
 public class Run extends DataObject {
 
     public final TaskId taskId;
-    public final RunGroup runGroup;
+    public final TaskGroup taskGroup;
     // todo: mtymes rename to ExecutionId
     public final RunId runId;
     public final ZonedDateTime createdAt;
     public final ZonedDateTime updatedAt;
     public final RunState runState;
 
-    public Run(TaskId taskId, RunGroup runGroup, RunId runId, ZonedDateTime createdAt, ZonedDateTime updatedAt, RunState runState) {
+    public Run(TaskId taskId, TaskGroup taskGroup, RunId runId, ZonedDateTime createdAt, ZonedDateTime updatedAt, RunState runState) {
         this.taskId = taskId;
-        this.runGroup = runGroup;
+        this.taskGroup = taskGroup;
         this.runId = runId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;

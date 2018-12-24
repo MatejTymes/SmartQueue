@@ -63,7 +63,7 @@ public class MongoTaskDaoIntegrationTest {
         // Then
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 submissionTime,
                 TaskState.SUBMITTED,
@@ -111,7 +111,7 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(run, isPresent());
         Run expectedRun = new Run(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 run.get().runId,
                 runCreationTime,
                 runCreationTime,
@@ -121,7 +121,7 @@ public class MongoTaskDaoIntegrationTest {
 
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 runCreationTime,
                 TaskState.RUNNING,
@@ -148,7 +148,7 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(true));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 cancellationTime,
                 TaskState.CANCELLED,
@@ -175,13 +175,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(false));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         runId,
                         runCreationTime,
                         successTime,
@@ -194,7 +194,7 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldNotCancelFailedTaskIfNoRetryIsAvailable() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        RunConfig runConfig = new RunConfig(randomRunGroup(), 1);
+        RunConfig runConfig = new RunConfig(randomTaskGroup(), 1);
         TaskId taskId = taskDao.submitTask(runConfig);
         ZonedDateTime runCreationTime = clock.increaseBy(randomMillis());
         RunId runId = taskDao.createNextAvailableRun().get().runId;
@@ -209,13 +209,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(false));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         runId,
                         runCreationTime,
                         failureTime,
@@ -228,7 +228,7 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldCancelFailedTaskIfRetryIsAvailable() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        RunConfig runConfig = new RunConfig(randomRunGroup(), randomInt(2, 5));
+        RunConfig runConfig = new RunConfig(randomTaskGroup(), randomInt(2, 5));
         TaskId taskId = taskDao.submitTask(runConfig);
         ZonedDateTime runCreationTime = clock.increaseBy(randomMillis());
         RunId runId = taskDao.createNextAvailableRun().get().runId;
@@ -243,13 +243,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(true));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 cancellationTime,
                 TaskState.CANCELLED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         runId,
                         runCreationTime,
                         failureTime,
@@ -280,13 +280,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(true));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         run.runId,
                         runCreationTime,
                         successTime,
@@ -316,13 +316,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(false));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         run.runId,
                         runCreationTime,
                         successTime,
@@ -352,13 +352,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(false));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         run.runId,
                         runCreationTime,
                         failureTime,
@@ -389,13 +389,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(true));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         run.runId,
                         runCreationTime,
                         failureTime,
@@ -425,13 +425,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(false));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         run.runId,
                         runCreationTime,
                         failureTime,
@@ -461,13 +461,13 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(wasSuccess, is(false));
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
                 newList(new Run(
                         taskId,
-                        runConfig.runGroup,
+                        runConfig.taskGroup,
                         run.runId,
                         runCreationTime,
                         successTime,
@@ -486,7 +486,7 @@ public class MongoTaskDaoIntegrationTest {
         int attemptCount = randomInt(2, 5);
 
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        RunConfig runConfig = new RunConfig(randomRunGroup(), attemptCount);
+        RunConfig runConfig = new RunConfig(randomTaskGroup(), attemptCount);
         TaskId taskId = taskDao.submitTask(runConfig);
         ZonedDateTime runCreationTime = clock.increaseBy(randomMillis());
         Run run = taskDao.createNextAvailableRun().get();
@@ -495,7 +495,7 @@ public class MongoTaskDaoIntegrationTest {
 
         List<Run> allRuns = newList(new Run(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 run.runId,
                 runCreationTime,
                 failureTime,
@@ -512,7 +512,7 @@ public class MongoTaskDaoIntegrationTest {
             RunId lastRunId = lastRun.get().runId;
             Run expectedRun = new Run(
                     taskId,
-                    runConfig.runGroup,
+                    runConfig.taskGroup,
                     lastRunId,
                     retryTime,
                     retryTime,
@@ -524,7 +524,7 @@ public class MongoTaskDaoIntegrationTest {
             runsSoFar.add(expectedRun);
             Task expectedTask = new Task(
                     taskId,
-                    runConfig.runGroup,
+                    runConfig.taskGroup,
                     submissionTime,
                     retryTime,
                     TaskState.RUNNING,
@@ -538,7 +538,7 @@ public class MongoTaskDaoIntegrationTest {
 
             allRuns.add(new Run(
                     taskId,
-                    runConfig.runGroup,
+                    runConfig.taskGroup,
                     lastRunId,
                     retryTime,
                     lastFailureTime,
@@ -546,7 +546,7 @@ public class MongoTaskDaoIntegrationTest {
             ));
             expectedTask = new Task(
                     taskId,
-                    runConfig.runGroup,
+                    runConfig.taskGroup,
                     submissionTime,
                     lastFailureTime,
                     TaskState.FAILED,
@@ -561,7 +561,7 @@ public class MongoTaskDaoIntegrationTest {
 
         Task expectedTask = new Task(
                 taskId,
-                runConfig.runGroup,
+                runConfig.taskGroup,
                 submissionTime,
                 lastFailureTime,
                 TaskState.FAILED,
@@ -574,7 +574,7 @@ public class MongoTaskDaoIntegrationTest {
     public void shouldNotRetryOnceTaskBecomesSuccessful() {
         int attemptCount = randomInt(3, 5);
 
-        RunConfig runConfig = new RunConfig(randomRunGroup(), attemptCount);
+        RunConfig runConfig = new RunConfig(randomTaskGroup(), attemptCount);
         TaskId taskId = taskDao.submitTask(runConfig);
         Run run1 = taskDao.createNextAvailableRun().get();
         taskDao.markAsFailed(run1.runId);
@@ -592,6 +592,6 @@ public class MongoTaskDaoIntegrationTest {
     // todo: verify you can not change state of previous runs
 
     private RunConfig commonRunConfig() {
-        return new RunConfig(randomRunGroup(), randomInt(1, 5));
+        return new RunConfig(randomTaskGroup(), randomInt(1, 5));
     }
 }

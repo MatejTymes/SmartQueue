@@ -12,7 +12,7 @@ import java.util.List;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static mtymes.common.time.DateUtil.toZonedDateTime;
-import static mtymes.smartqueue.domain.RunGroup.runGroup;
+import static mtymes.smartqueue.domain.TaskGroup.taskGroup;
 import static mtymes.smartqueue.domain.RunId.runId;
 import static mtymes.smartqueue.domain.TaskId.taskId;
 
@@ -57,8 +57,8 @@ public class DocWrapper extends DataObject {
         return taskId(getString(fieldName));
     }
 
-    public RunGroup getRunGroup(String fieldName) {
-        return runGroup(getString(fieldName));
+    public TaskGroup getTaskGroup(String fieldName) {
+        return taskGroup(getString(fieldName));
     }
 
     public RunId getRunId(String fieldName) {

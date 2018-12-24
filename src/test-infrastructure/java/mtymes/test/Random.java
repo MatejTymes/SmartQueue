@@ -1,6 +1,6 @@
 package mtymes.test;
 
-import mtymes.smartqueue.domain.RunGroup;
+import mtymes.smartqueue.domain.TaskGroup;
 import mtymes.smartqueue.domain.RunId;
 import mtymes.smartqueue.domain.TaskId;
 
@@ -41,8 +41,8 @@ public class Random {
         return TaskId.taskId(randomUUID());
     }
 
-    public static RunGroup randomRunGroup() {
-        return RunGroup.runGroup("runGroup-" + randomInt(0, 15_000));
+    public static TaskGroup randomTaskGroup() {
+        return TaskGroup.taskGroup("taskGroup-" + randomInt(0, 15_000));
     }
 
     public static RunId randomRunId() {
