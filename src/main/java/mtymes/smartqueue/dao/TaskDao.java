@@ -12,9 +12,9 @@ public interface TaskDao {
 
     Optional<Task> loadTask(TaskId taskId);
 
-    Optional<Run> createNextAvailableRun();
+    Optional<Execution> createNextExecution();
 
-    boolean markAsSucceeded(RunId runId);
+    boolean markAsSucceeded(ExecutionId executionId);
 
-    boolean markAsFailed(RunId runId);
+    boolean markAsFailed(ExecutionId executionId);
 }

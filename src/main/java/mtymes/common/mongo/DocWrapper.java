@@ -13,7 +13,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static mtymes.common.time.DateUtil.toZonedDateTime;
 import static mtymes.smartqueue.domain.TaskGroup.taskGroup;
-import static mtymes.smartqueue.domain.RunId.runId;
+import static mtymes.smartqueue.domain.ExecutionId.executionId;
 import static mtymes.smartqueue.domain.TaskId.taskId;
 
 // todo: mtymes - move outside of common package
@@ -61,16 +61,16 @@ public class DocWrapper extends DataObject {
         return taskGroup(getString(fieldName));
     }
 
-    public RunId getRunId(String fieldName) {
-        return runId(getString(fieldName));
+    public ExecutionId getExecutionId(String fieldName) {
+        return executionId(getString(fieldName));
     }
 
     public TaskState getTaskState(String fieldName) {
         return TaskState.valueOf(getString(fieldName));
     }
 
-    public RunState getRunState(String fieldName) {
-        return RunState.valueOf(getString(fieldName));
+    public ExecutionState getExecutionState(String fieldName) {
+        return ExecutionState.valueOf(getString(fieldName));
     }
 
     private <T> T getField(String fieldName, boolean nullAllowed) {

@@ -27,10 +27,10 @@ public class MongoTaskDao implements TaskDao {
     protected static final String STATE = "state";
 
     private static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
-    private static final String RUN_ATTEMPTS_LEFT = "attemptsLeft";
+    private static final String EXECUTION_ATTEMPTS_LEFT = "attemptsLeft";
 
-    private static final String RUNS = "runs";
-    private static final String RUN_ID = "runId";
+    private static final String EXECUTIONS = "executions";
+    private static final String EXECUTION_ID = "executionId";
 
     private final MongoCollection<Document> tasks;
 
@@ -58,7 +58,7 @@ public class MongoTaskDao implements TaskDao {
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                .put(RUN_ATTEMPTS_LEFT, taskConfig.attemptCount)
+                .put(EXECUTION_ATTEMPTS_LEFT, taskConfig.attemptCount)
                 .build());
 
         return taskId;
@@ -72,7 +72,7 @@ public class MongoTaskDao implements TaskDao {
                 docBuilder()
                         .put(TASK_ID, taskId)
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                        .put(RUN_ATTEMPTS_LEFT, doc("$gt", 0))
+                        .put(EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
                 docBuilder()
                         .put("$set", docBuilder()
@@ -88,24 +88,25 @@ public class MongoTaskDao implements TaskDao {
 
     // todo: fetch based on taskGroup as well
     @Override
-    public Optional<Run> createNextAvailableRun() {
+    public Optional<Execution> createNextExecution() {
         ZonedDateTime now = clock.now();
 
-        RunId runId = RunId.runId(randomUUID());
+        ExecutionId executionId = ExecutionId.executionId(randomUUID());
         Document document = tasks.findOneAndUpdate(
                 // todo: add index for this
                 docBuilder()
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                        .put(RUN_ATTEMPTS_LEFT, doc("$gt", 0))
+                        .put(EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
                 docBuilder()
-                        .put("$addToSet", doc(RUNS, docBuilder()
-                                .put(RUN_ID, runId)
+                        .put("$addToSet", doc(EXECUTIONS, docBuilder()
+                                .put(EXECUTION_ID, executionId)
                                 .put(CREATED_AT_TIME, now)
                                 .put(UPDATED_AT_TIME, now)
-                                .put(STATE, RunState.CREATED)
+                                .put(STATE, ExecutionState.CREATED)
                                 .build()))
-                        .put("$inc", doc(RUN_ATTEMPTS_LEFT, -1))
+                        .put("$inc", doc(EXECUTION_ATTEMPTS_LEFT, -1))
+                        // todo: store lastExecutionId
                         .put("$set", docBuilder()
                                 .put(IS_AVAILABLE_FOR_EXECUTION, false)
                                 .put(STATE, TaskState.RUNNING)
@@ -120,33 +121,34 @@ public class MongoTaskDao implements TaskDao {
             DocWrapper dbTask = wrap(doc);
             TaskId taskId = dbTask.getTaskId(TASK_ID);
             TaskGroup taskGroup = dbTask.getTaskGroup(TASK_GROUP);
-            DocWrapper dbRun = dbTask.getList(RUNS).lastDoc();
-            return toRun(
+
+            DocWrapper dbExecution = dbTask.getList(EXECUTIONS).lastDoc();
+            return toExecution(
                     taskId,
                     taskGroup,
-                    dbRun
+                    dbExecution
             );
         });
     }
 
     @Override
-    public boolean markAsSucceeded(RunId runId) {
+    public boolean markAsSucceeded(ExecutionId executionId) {
         ZonedDateTime now = clock.now();
 
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(STATE, TaskState.RUNNING)
-                        .put(RUNS, doc("$elemMatch", docBuilder()
-                                .put(RUN_ID, runId)
-                                .put(STATE, RunState.CREATED)
+                        .put(EXECUTIONS, doc("$elemMatch", docBuilder()
+                                .put(EXECUTION_ID, executionId)
+                                .put(STATE, ExecutionState.CREATED)
                                 .build()))
                         .build(),
                 docBuilder()
                         .put("$set", docBuilder()
                                 .put(STATE, TaskState.SUCCEEDED)
                                 .put(UPDATED_AT_TIME, now)
-                                .put(RUNS + ".$." + STATE, RunState.SUCCEEDED)
-                                .put(RUNS + ".$." + UPDATED_AT_TIME, now)
+                                .put(EXECUTIONS + ".$." + STATE, ExecutionState.SUCCEEDED)
+                                .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
                                 .build())
                         .build()
         ).getModifiedCount();
@@ -155,23 +157,23 @@ public class MongoTaskDao implements TaskDao {
     }
 
     @Override
-    public boolean markAsFailed(RunId runId) {
+    public boolean markAsFailed(ExecutionId executionId) {
         ZonedDateTime now = clock.now();
 
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(STATE, TaskState.RUNNING)
-                        .put(RUNS, doc("$elemMatch", docBuilder()
-                                .put(RUN_ID, runId)
-                                .put(STATE, RunState.CREATED)
+                        .put(EXECUTIONS, doc("$elemMatch", docBuilder()
+                                .put(EXECUTION_ID, executionId)
+                                .put(STATE, ExecutionState.CREATED)
                                 .build()))
                         .build(),
                 docBuilder()
                         .put("$set", docBuilder()
                                 .put(STATE, TaskState.FAILED)
                                 .put(UPDATED_AT_TIME, now)
-                                .put(RUNS + ".$." + STATE, RunState.FAILED)
-                                .put(RUNS + ".$." + UPDATED_AT_TIME, now)
+                                .put(EXECUTIONS + ".$." + STATE, ExecutionState.FAILED)
+                                .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
                                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
                                 .build())
                         .build()
@@ -192,18 +194,18 @@ public class MongoTaskDao implements TaskDao {
                 dbTask.getZonedDateTime(CREATED_AT_TIME),
                 dbTask.getZonedDateTime(UPDATED_AT_TIME),
                 dbTask.getTaskState(STATE),
-                dbTask.getList(RUNS, true).mapDoc(dbRun -> toRun(taskId, taskGroup, dbRun))
+                dbTask.getList(EXECUTIONS, true).mapDoc(dbExecution -> toExecution(taskId, taskGroup, dbExecution))
         );
     }
 
-    private Run toRun(TaskId taskId, TaskGroup taskGroup, DocWrapper dbRun) {
-        return new Run(
+    private Execution toExecution(TaskId taskId, TaskGroup taskGroup, DocWrapper dbExecution) {
+        return new Execution(
                 taskId,
                 taskGroup,
-                dbRun.getRunId(RUN_ID),
-                dbRun.getZonedDateTime(CREATED_AT_TIME),
-                dbRun.getZonedDateTime(UPDATED_AT_TIME),
-                dbRun.getRunState(STATE)
+                dbExecution.getExecutionId(EXECUTION_ID),
+                dbExecution.getZonedDateTime(CREATED_AT_TIME),
+                dbExecution.getZonedDateTime(UPDATED_AT_TIME),
+                dbExecution.getExecutionState(STATE)
         );
     }
 

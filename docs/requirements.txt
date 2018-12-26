@@ -1,11 +1,11 @@
                                                                 - submit jobRequest
-                                                                - take next available run
-                                                                - mark run as succeeded
-                                                                - mark run as failed
+                                                                - take next available execution
+                                                                - mark execution as succeeded
+                                                                - mark execution as failed
                                                                 - cancel non running jobRequest
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
                                                                 - add retry ability
-- tasks are going to be run based on priority and creation date
+- tasks are going to be execution based on priority and creation date
         - implement message grouping
 - implement plug-able limit mechanism
 - task has body
@@ -15,8 +15,8 @@
 - implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
 - implement retry mechanism
 - implement ttl mechanism
-- when cancelling you need to provide the last RunId
+- when cancelling you need to provide the last ExecutionId
 - add orphanage mechanism - if hasn't started after 1 minute consider orphan
 - in memory daos - for quick tests
-- add ability to not keep the run history
+- add ability to record/not-record the execution history
 - add ability to heartbeat

@@ -1,7 +1,7 @@
 package mtymes.test;
 
 import mtymes.smartqueue.domain.TaskGroup;
-import mtymes.smartqueue.domain.RunId;
+import mtymes.smartqueue.domain.ExecutionId;
 import mtymes.smartqueue.domain.TaskId;
 
 import java.time.Duration;
@@ -45,8 +45,8 @@ public class Random {
         return TaskGroup.taskGroup("taskGroup-" + randomInt(0, 15_000));
     }
 
-    public static RunId randomRunId() {
-        return RunId.runId(randomUUID());
+    public static ExecutionId randomExecutionId() {
+        return ExecutionId.executionId(randomUUID());
     }
 
     @SafeVarargs
