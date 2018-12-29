@@ -6,6 +6,7 @@ import mtymes.common.mongo.DocWrapper;
 import mtymes.common.time.Clock;
 import mtymes.smartqueue.dao.TaskDao;
 import mtymes.smartqueue.domain.*;
+import mtymes.smartqueue.domain.query.ExecutionQuery;
 import org.bson.Document;
 
 import java.time.ZonedDateTime;
@@ -21,10 +22,11 @@ import static mtymes.common.mongo.DocWrapper.wrap;
 public class MongoTaskDao implements TaskDao {
 
     private static final String TASK_ID = "_id";
-    private static final String TASK_GROUP = "taskGroup";
     private static final String CREATED_AT_TIME = "createdAt";
     private static final String UPDATED_AT_TIME = "updatedAt";
     protected static final String STATE = "state";
+
+    private static final String TASK_GROUP = "taskGroup"; // todo: make optional
 
     private static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
     private static final String EXECUTION_ATTEMPTS_LEFT = "attemptsLeft";
@@ -86,9 +88,9 @@ public class MongoTaskDao implements TaskDao {
         return modifiedCount == 1;
     }
 
-    // todo: fetch based on taskGroup as well
     @Override
-    public Optional<Execution> createNextExecution() {
+    // todo: start using the query
+    public Optional<Execution> createNextExecution(ExecutionQuery executionQuery) {
         ZonedDateTime now = clock.now();
 
         ExecutionId executionId = ExecutionId.executionId(randomUUID());
@@ -138,6 +140,7 @@ public class MongoTaskDao implements TaskDao {
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(STATE, TaskState.RUNNING)
+                        // todo: executionId must match lastExecutionId
                         .put(EXECUTIONS, doc("$elemMatch", docBuilder()
                                 .put(EXECUTION_ID, executionId)
                                 .put(STATE, ExecutionState.CREATED)
@@ -163,6 +166,7 @@ public class MongoTaskDao implements TaskDao {
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(STATE, TaskState.RUNNING)
+                        // todo: executionId must match lastExecutionId
                         .put(EXECUTIONS, doc("$elemMatch", docBuilder()
                                 .put(EXECUTION_ID, executionId)
                                 .put(STATE, ExecutionState.CREATED)

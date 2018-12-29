@@ -6,7 +6,6 @@
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
                                                                 - add retry ability
 - tasks are going to be execution based on priority and creation date
-        - implement message grouping
 - implement plug-able limit mechanism
 - task has body
 - define client api
@@ -20,3 +19,7 @@
 - in memory daos - for quick tests
 - add ability to record/not-record the execution history
 - add ability to heartbeat
+
+- make grouping optional
+- make priority optional
+- implement message grouping
