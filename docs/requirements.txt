@@ -5,21 +5,25 @@
                                                                 - cancel non running jobRequest
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
                                                                 - add retry ability
-- tasks are going to be execution based on priority and creation date
-- implement plug-able limit mechanism
 - task has body
+- implement ttl mechanism
+- enable multiple queues
+- when cancelling you need to provide the last ExecutionId
+- define custom meta-fields to enable picking of next execution
+    - filtering based on string value (e.g. group)
+    - filtering based on string list value (e.g. labels)
+    - sorting based on int value (e.g. priority)
+    - sorting based on creation date
+    - sorting based on last updated date
+- add ability to check for heart beat
+    - add ability to record worker id (on sending heartbeat)
+- implement plug-able limit mechanism
 - define client api
 - add local jvm client api
 - add rest client api
-- implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
 - implement retry mechanism
-- implement ttl mechanism
-- when cancelling you need to provide the last ExecutionId
 - add orphanage mechanism - if hasn't started after 1 minute consider orphan
-- in memory daos - for quick tests
 - add ability to record/not-record the execution history
-- add ability to heartbeat
 
-- make grouping optional
-- make priority optional
-- implement message grouping
+- implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
+- in memory daos - for quick tests

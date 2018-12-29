@@ -26,8 +26,6 @@ public class MongoTaskDao implements TaskDao {
     private static final String UPDATED_AT_TIME = "updatedAt";
     protected static final String STATE = "state";
 
-    private static final String TASK_GROUP = "taskGroup"; // todo: make optional
-
     private static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
     private static final String EXECUTION_ATTEMPTS_LEFT = "attemptsLeft";
 
@@ -55,7 +53,6 @@ public class MongoTaskDao implements TaskDao {
         ZonedDateTime now = clock.now();
         tasks.insertOne(docBuilder()
                 .put(TASK_ID, taskId)
-                .put(TASK_GROUP, taskConfig.taskGroup)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
@@ -122,12 +119,10 @@ public class MongoTaskDao implements TaskDao {
         return Optional.ofNullable(document).map(doc -> {
             DocWrapper dbTask = wrap(doc);
             TaskId taskId = dbTask.getTaskId(TASK_ID);
-            TaskGroup taskGroup = dbTask.getTaskGroup(TASK_GROUP);
 
             DocWrapper dbExecution = dbTask.getList(EXECUTIONS).lastDoc();
             return toExecution(
                     taskId,
-                    taskGroup,
                     dbExecution
             );
         });
@@ -190,22 +185,19 @@ public class MongoTaskDao implements TaskDao {
         DocWrapper dbTask = wrap(doc);
 
         TaskId taskId = dbTask.getTaskId(TASK_ID);
-        TaskGroup taskGroup = dbTask.getTaskGroup(TASK_GROUP);
 
         return new Task(
                 taskId,
-                taskGroup,
                 dbTask.getZonedDateTime(CREATED_AT_TIME),
                 dbTask.getZonedDateTime(UPDATED_AT_TIME),
                 dbTask.getTaskState(STATE),
-                dbTask.getList(EXECUTIONS, true).mapDoc(dbExecution -> toExecution(taskId, taskGroup, dbExecution))
+                dbTask.getList(EXECUTIONS, true).mapDoc(dbExecution -> toExecution(taskId, dbExecution))
         );
     }
 
-    private Execution toExecution(TaskId taskId, TaskGroup taskGroup, DocWrapper dbExecution) {
+    private Execution toExecution(TaskId taskId, DocWrapper dbExecution) {
         return new Execution(
                 taskId,
-                taskGroup,
                 dbExecution.getExecutionId(EXECUTION_ID),
                 dbExecution.getZonedDateTime(CREATED_AT_TIME),
                 dbExecution.getZonedDateTime(UPDATED_AT_TIME),
