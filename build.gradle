@@ -77,8 +77,8 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.21'
     compile 'ch.qos.logback:logback-classic:1.1.9'
 
-    compile 'com.fasterxml.jackson.module:jackson-module-afterburner:2.9.0'
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.0'
+    compile 'com.fasterxml.jackson.module:jackson-module-afterburner:2.9.8'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8'
 
     compile 'org.mongodb:mongo-java-driver:3.5.0'
     compile 'com.sparkjava:spark-core:2.6.0'

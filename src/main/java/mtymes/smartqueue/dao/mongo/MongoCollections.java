@@ -8,7 +8,6 @@ import org.bson.Document;
 import java.util.function.Consumer;
 
 import static com.mongodb.client.model.Indexes.ascending;
-import static com.mongodb.client.model.Indexes.descending;
 import static javafixes.common.CollectionUtil.newSet;
 
 public class MongoCollections {
@@ -26,6 +25,16 @@ public class MongoCollections {
                             ),
                             new IndexOptions().unique(false)
                     );
+                }
+        );
+    }
+
+    public static MongoCollection<Document> bodiesCollection(MongoDatabase database) {
+        return getOrCreateCollection(
+                database,
+                "bodies",
+                bodies -> {
+                    // no indexes needed
                 }
         );
     }

@@ -6,7 +6,6 @@ import mtymes.common.mongo.DocWrapper;
 import mtymes.common.time.Clock;
 import mtymes.smartqueue.dao.TaskDao;
 import mtymes.smartqueue.domain.*;
-import mtymes.smartqueue.domain.query.ExecutionQuery;
 import org.bson.Document;
 
 import java.time.ZonedDateTime;
@@ -21,7 +20,7 @@ import static mtymes.common.mongo.DocWrapper.wrap;
 
 public class MongoTaskDao implements TaskDao {
 
-    private static final String TASK_ID = "_id";
+    private static final String _ID = "_id";
     private static final String CREATED_AT_TIME = "createdAt";
     private static final String UPDATED_AT_TIME = "updatedAt";
     protected static final String STATE = "state";
@@ -32,35 +31,49 @@ public class MongoTaskDao implements TaskDao {
     private static final String EXECUTIONS = "executions";
     private static final String EXECUTION_ID = "executionId";
 
+    private static final String CONTENT = "content";
+
     private final MongoCollection<Document> tasks;
+    private final MongoCollection<Document> bodies;
 
     private final Clock clock;
 
-    public MongoTaskDao(MongoCollection<Document> tasks, Clock clock) {
+    public MongoTaskDao(MongoCollection<Document> tasks, MongoCollection<Document> bodies, Clock clock) {
         this.tasks = tasks;
+        this.bodies = bodies;
         this.clock = clock;
     }
 
     @Override
-    public Optional<Task> loadTask(TaskId taskId) {
-        return one(tasks.find(doc(TASK_ID, taskId))).map(this::toTask);
-    }
-
-    @Override
-    public TaskId submitTask(TaskConfig taskConfig) {
+    public TaskId submitTask(TaskConfig config, TaskBody body) {
         TaskId taskId = TaskId.taskId(randomUUID());
 
         ZonedDateTime now = clock.now();
+        bodies.insertOne(docBuilder()
+                .put(_ID, taskId)
+                .put(CONTENT, body.content)
+                .put(CREATED_AT_TIME, now)
+                .build());
         tasks.insertOne(docBuilder()
-                .put(TASK_ID, taskId)
+                .put(_ID, taskId)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                .put(EXECUTION_ATTEMPTS_LEFT, taskConfig.attemptCount)
+                .put(EXECUTION_ATTEMPTS_LEFT, config.attemptCount)
                 .build());
 
         return taskId;
+    }
+
+    @Override
+    public Optional<Task> loadTask(TaskId taskId) {
+        return one(tasks.find(doc(_ID, taskId))).map(this::toTask);
+    }
+
+    @Override
+    public Optional<TaskBody> loadTaskBody(TaskId taskId) {
+        return one(bodies.find(doc(_ID, taskId))).map(this::toTaskBody);
     }
 
     @Override
@@ -69,7 +82,7 @@ public class MongoTaskDao implements TaskDao {
 
         long modifiedCount = tasks.updateOne(
                 docBuilder()
-                        .put(TASK_ID, taskId)
+                        .put(_ID, taskId)
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
                         .put(EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
@@ -86,8 +99,7 @@ public class MongoTaskDao implements TaskDao {
     }
 
     @Override
-    // todo: start using the query
-    public Optional<Execution> createNextExecution(ExecutionQuery executionQuery) {
+    public Optional<Execution> createNextExecution() {
         ZonedDateTime now = clock.now();
 
         ExecutionId executionId = ExecutionId.executionId(randomUUID());
@@ -118,7 +130,7 @@ public class MongoTaskDao implements TaskDao {
 
         return Optional.ofNullable(document).map(doc -> {
             DocWrapper dbTask = wrap(doc);
-            TaskId taskId = dbTask.getTaskId(TASK_ID);
+            TaskId taskId = dbTask.getTaskId(_ID);
 
             DocWrapper dbExecution = dbTask.getList(EXECUTIONS).lastDoc();
             return toExecution(
@@ -184,7 +196,7 @@ public class MongoTaskDao implements TaskDao {
     private Task toTask(Document doc) {
         DocWrapper dbTask = wrap(doc);
 
-        TaskId taskId = dbTask.getTaskId(TASK_ID);
+        TaskId taskId = dbTask.getTaskId(_ID);
 
         return new Task(
                 taskId,
@@ -192,6 +204,14 @@ public class MongoTaskDao implements TaskDao {
                 dbTask.getZonedDateTime(UPDATED_AT_TIME),
                 dbTask.getTaskState(STATE),
                 dbTask.getList(EXECUTIONS, true).mapDoc(dbExecution -> toExecution(taskId, dbExecution))
+        );
+    }
+
+    private TaskBody toTaskBody(Document doc) {
+        DocWrapper dbTaskBody = wrap(doc);
+
+        return new TaskBody(
+                dbTaskBody.getString(CONTENT)
         );
     }
 

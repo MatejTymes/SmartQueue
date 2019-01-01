@@ -5,7 +5,7 @@
                                                                 - cancel non running jobRequest
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
                                                                 - add retry ability
-- task has body
+                                                                - task has body
 - implement ttl mechanism
 - enable multiple queues
 - when cancelling you need to provide the last ExecutionId

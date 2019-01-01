@@ -1,6 +1,7 @@
 package mtymes.test;
 
 import mtymes.smartqueue.domain.ExecutionId;
+import mtymes.smartqueue.domain.TaskBody;
 import mtymes.smartqueue.domain.TaskId;
 
 import java.time.Duration;
@@ -42,6 +43,10 @@ public class Random {
 
     public static ExecutionId randomExecutionId() {
         return ExecutionId.executionId(randomUUID());
+    }
+
+    public static TaskBody randomTaskBody() {
+        return new TaskBody(randomUUID().toString());
     }
 
     @SafeVarargs

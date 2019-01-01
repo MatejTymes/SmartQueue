@@ -1,25 +1,21 @@
 package mtymes.smartqueue.dao;
 
 import mtymes.smartqueue.domain.*;
-import mtymes.smartqueue.domain.query.ExecutionQuery;
 
 import java.util.Optional;
 
-import static mtymes.smartqueue.domain.query.ExecutionQuery.emptyQuery;
-
 public interface TaskDao {
 
-    TaskId submitTask(TaskConfig taskConfig);
-
-    boolean cancelTask(TaskId taskId);
+    TaskId submitTask(TaskConfig config, TaskBody body);
 
     Optional<Task> loadTask(TaskId taskId);
 
-    Optional<Execution> createNextExecution(ExecutionQuery query);
+    Optional<TaskBody> loadTaskBody(TaskId taskId);
 
-    default Optional<Execution> createNextExecution() {
-        return createNextExecution(emptyQuery());
-    }
+    // todo: provide Optional<ExecutionId> lastAssumedExecutionId
+    boolean cancelTask(TaskId taskId);
+
+    Optional<Execution> createNextExecution();
 
     boolean markAsSucceeded(ExecutionId executionId);
 
