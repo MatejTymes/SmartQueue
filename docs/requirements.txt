@@ -6,9 +6,9 @@
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
                                                                 - add retry ability
                                                                 - task has body
+- when cancelling you need to provide the last ExecutionId
 - implement ttl mechanism
 - enable multiple queues
-- when cancelling you need to provide the last ExecutionId
 - define custom meta-fields to enable picking of next execution
     - filtering based on string value (e.g. group)
     - filtering based on string list value (e.g. labels)
@@ -24,6 +24,7 @@
 - implement retry mechanism
 - add orphanage mechanism - if hasn't started after 1 minute consider orphan
 - add ability to record/not-record the execution history
+- add ability to pause agents
 
 - implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
 - in memory daos - for quick tests

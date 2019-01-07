@@ -22,14 +22,15 @@ public class MongoTaskDao implements TaskDao {
 
     private static final String _ID = "_id";
     private static final String CREATED_AT_TIME = "createdAt";
-    private static final String UPDATED_AT_TIME = "updatedAt";
-    protected static final String STATE = "state";
+    static final String UPDATED_AT_TIME = "updatedAt";
+    private static final String STATE = "state";
 
-    private static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
-    private static final String EXECUTION_ATTEMPTS_LEFT = "attemptsLeft";
+    static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
+    static final String EXECUTION_ATTEMPTS_LEFT = "attemptsLeft";
 
     private static final String EXECUTIONS = "executions";
     private static final String EXECUTION_ID = "executionId";
+    static final String LAST_EXECUTION_ID = "lastExecutionId";
 
     private static final String CONTENT = "content";
 
@@ -76,13 +77,15 @@ public class MongoTaskDao implements TaskDao {
         return one(bodies.find(doc(_ID, taskId))).map(this::toTaskBody);
     }
 
+    // todo: test the Optional<ExecutionId> lastAssumedExecutionId
     @Override
-    public boolean cancelTask(TaskId taskId) {
+    public boolean cancelTask(TaskId taskId, Optional<ExecutionId> lastAssumedExecutionId) {
         ZonedDateTime now = clock.now();
 
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(_ID, taskId)
+                        .put(LAST_EXECUTION_ID, lastAssumedExecutionId.orElse(null)) // todo: test this
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
                         .put(EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
@@ -104,7 +107,6 @@ public class MongoTaskDao implements TaskDao {
 
         ExecutionId executionId = ExecutionId.executionId(randomUUID());
         Document document = tasks.findOneAndUpdate(
-                // todo: add index for this
                 docBuilder()
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
                         .put(EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
@@ -117,10 +119,10 @@ public class MongoTaskDao implements TaskDao {
                                 .put(STATE, ExecutionState.CREATED)
                                 .build()))
                         .put("$inc", doc(EXECUTION_ATTEMPTS_LEFT, -1))
-                        // todo: store lastExecutionId
                         .put("$set", docBuilder()
                                 .put(IS_AVAILABLE_FOR_EXECUTION, false)
                                 .put(STATE, TaskState.RUNNING)
+                                .put(LAST_EXECUTION_ID, executionId)
                                 .put(UPDATED_AT_TIME, now)
                                 .build())
                         .build(),
@@ -146,8 +148,8 @@ public class MongoTaskDao implements TaskDao {
 
         long modifiedCount = tasks.updateOne(
                 docBuilder()
+                        .put(LAST_EXECUTION_ID, executionId)
                         .put(STATE, TaskState.RUNNING)
-                        // todo: executionId must match lastExecutionId
                         .put(EXECUTIONS, doc("$elemMatch", docBuilder()
                                 .put(EXECUTION_ID, executionId)
                                 .put(STATE, ExecutionState.CREATED)
@@ -172,8 +174,8 @@ public class MongoTaskDao implements TaskDao {
 
         long modifiedCount = tasks.updateOne(
                 docBuilder()
+                        .put(LAST_EXECUTION_ID, executionId)
                         .put(STATE, TaskState.RUNNING)
-                        // todo: executionId must match lastExecutionId
                         .put(EXECUTIONS, doc("$elemMatch", docBuilder()
                                 .put(EXECUTION_ID, executionId)
                                 .put(STATE, ExecutionState.CREATED)
@@ -203,7 +205,8 @@ public class MongoTaskDao implements TaskDao {
                 dbTask.getZonedDateTime(CREATED_AT_TIME),
                 dbTask.getZonedDateTime(UPDATED_AT_TIME),
                 dbTask.getTaskState(STATE),
-                dbTask.getList(EXECUTIONS, true).mapDoc(dbExecution -> toExecution(taskId, dbExecution))
+                dbTask.getOptionalExecutionId(LAST_EXECUTION_ID),
+                dbTask.getOptionalList(EXECUTIONS).mapDoc(dbExecution -> toExecution(taskId, dbExecution))
         );
     }
 

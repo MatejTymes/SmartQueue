@@ -12,8 +12,7 @@ public interface TaskDao {
 
     Optional<TaskBody> loadTaskBody(TaskId taskId);
 
-    // todo: provide Optional<ExecutionId> lastAssumedExecutionId
-    boolean cancelTask(TaskId taskId);
+    boolean cancelTask(TaskId taskId, Optional<ExecutionId> lastAssumedExecutionId);
 
     Optional<Execution> createNextExecution();
 

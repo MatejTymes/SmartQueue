@@ -79,6 +79,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 submissionTime,
                 TaskState.SUBMITTED,
+                Optional.empty(),
                 emptyList()
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
@@ -101,7 +102,7 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldNotCreateExecutionIfTaskIsCancelled() {
         TaskId taskId = taskDao.submitTask(commonTaskConfig(), randomTaskBody());
-        taskDao.cancelTask(taskId);
+        taskDao.cancelTask(taskId, Optional.empty());
 
         // When
         Optional<Execution> execution = taskDao.createNextExecution();
@@ -136,6 +137,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 executionCreationTime,
                 TaskState.RUNNING,
+                execution.map(e -> e.executionId),
                 newList(expectedExecution)
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
@@ -146,14 +148,14 @@ public class MongoTaskDaoIntegrationTest {
     /* ==================== */
 
     @Test
-    public void shouldCancelSubmittedTask() {
+    public void shouldCancelTaskWithoutAnyExecution() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
         TaskConfig taskConfig = commonTaskConfig();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
 
         // When
         ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
-        boolean wasSuccess = taskDao.cancelTask(taskId);
+        boolean wasSuccess = taskDao.cancelTask(taskId, Optional.empty());
 
         // Then
         assertThat(wasSuccess, is(true));
@@ -162,10 +164,13 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 cancellationTime,
                 TaskState.CANCELLED,
+                Optional.empty(),
                 emptyList()
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
     }
+
+    // todo: cancel - with old executionId, with wrong executionId, with empty executionId if last execution exists
 
     @Test
     public void shouldNotCancelSuccessfulTask() {
@@ -176,10 +181,11 @@ public class MongoTaskDaoIntegrationTest {
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
         ZonedDateTime successTime = clock.increaseBy(randomMillis());
         taskDao.markAsSucceeded(executionId);
+        Optional<ExecutionId> lastExecutionId = Optional.of(executionId);
 
         // When
         ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
-        boolean wasSuccess = taskDao.cancelTask(taskId);
+        boolean wasSuccess = taskDao.cancelTask(taskId, lastExecutionId);
 
         // Then
         assertThat(wasSuccess, is(false));
@@ -188,6 +194,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
+                lastExecutionId,
                 newList(new Execution(
                         taskId,
                         executionId,
@@ -208,10 +215,11 @@ public class MongoTaskDaoIntegrationTest {
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
         ZonedDateTime failureTime = clock.increaseBy(randomMillis());
         taskDao.markAsFailed(executionId);
+        Optional<ExecutionId> lastExecutionId = Optional.of(executionId);
 
         // When
         ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
-        boolean wasSuccess = taskDao.cancelTask(taskId);
+        boolean wasSuccess = taskDao.cancelTask(taskId, lastExecutionId);
 
         // Then
         assertThat(wasSuccess, is(false));
@@ -220,6 +228,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
+                lastExecutionId,
                 newList(new Execution(
                         taskId,
                         executionId,
@@ -240,10 +249,11 @@ public class MongoTaskDaoIntegrationTest {
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
         ZonedDateTime failureTime = clock.increaseBy(randomMillis());
         taskDao.markAsFailed(executionId);
+        Optional<ExecutionId> lastExecutionId = Optional.of(executionId);
 
         // When
         ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
-        boolean wasSuccess = taskDao.cancelTask(taskId);
+        boolean wasSuccess = taskDao.cancelTask(taskId, lastExecutionId);
 
         // Then
         assertThat(wasSuccess, is(true));
@@ -252,6 +262,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 cancellationTime,
                 TaskState.CANCELLED,
+                lastExecutionId,
                 newList(new Execution(
                         taskId,
                         executionId,
@@ -287,6 +298,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
+                Optional.of(execution.executionId),
                 newList(new Execution(
                         taskId,
                         execution.executionId,
@@ -321,6 +333,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
+                Optional.of(execution.executionId),
                 newList(new Execution(
                         taskId,
                         execution.executionId,
@@ -355,6 +368,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
+                Optional.of(execution.executionId),
                 newList(new Execution(
                         taskId,
                         execution.executionId,
@@ -390,6 +404,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
+                Optional.of(execution.executionId),
                 newList(new Execution(
                         taskId,
                         execution.executionId,
@@ -424,6 +439,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 failureTime,
                 TaskState.FAILED,
+                Optional.of(execution.executionId),
                 newList(new Execution(
                         taskId,
                         execution.executionId,
@@ -458,6 +474,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 successTime,
                 TaskState.SUCCEEDED,
+                Optional.of(execution.executionId),
                 newList(new Execution(
                         taskId,
                         execution.executionId,
@@ -494,13 +511,14 @@ public class MongoTaskDaoIntegrationTest {
         ));
 
         // When & Then
+        ExecutionId lastExecutionId = null;
         ZonedDateTime lastFailureTime = null;
         for (int attemptNo = 2; attemptNo <= attemptCount; attemptNo++) {
 
             ZonedDateTime retryTime = clock.increaseBy(randomMillis());
             Optional<Execution> lastExecution = taskDao.createNextExecution();
             assertThat(lastExecution, isPresent());
-            ExecutionId lastExecutionId = lastExecution.get().executionId;
+            lastExecutionId = lastExecution.get().executionId;
             Execution expectedExecution = new Execution(
                     taskId,
                     lastExecutionId,
@@ -517,6 +535,7 @@ public class MongoTaskDaoIntegrationTest {
                     submissionTime,
                     retryTime,
                     TaskState.RUNNING,
+                    Optional.of(lastExecutionId),
                     executionsSoFar
             );
             assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
@@ -537,6 +556,7 @@ public class MongoTaskDaoIntegrationTest {
                     submissionTime,
                     lastFailureTime,
                     TaskState.FAILED,
+                    Optional.of(lastExecutionId),
                     allExecutions
             );
             assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
@@ -551,6 +571,7 @@ public class MongoTaskDaoIntegrationTest {
                 submissionTime,
                 lastFailureTime,
                 TaskState.FAILED,
+                Optional.of(lastExecutionId),
                 allExecutions
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));

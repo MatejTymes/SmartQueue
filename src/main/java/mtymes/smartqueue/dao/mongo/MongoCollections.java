@@ -9,6 +9,8 @@ import java.util.function.Consumer;
 
 import static com.mongodb.client.model.Indexes.ascending;
 import static javafixes.common.CollectionUtil.newSet;
+import static mtymes.common.mongo.DocBuilder.doc;
+import static mtymes.common.mongo.DocBuilder.docBuilder;
 
 public class MongoCollections {
 
@@ -19,11 +21,22 @@ public class MongoCollections {
                 tasks -> {
                     tasks.createIndex(
                             ascending(
-                                    MongoTaskDao.STATE
-//                                    ,
-//                                    MongoTaskDao.UPDATED_AT_TIME
+                                    MongoTaskDao.LAST_EXECUTION_ID
                             ),
                             new IndexOptions().unique(false)
+                    );
+                    tasks.createIndex(
+                            ascending(
+                                    // todo: make dynamic based on sorting in next createNextExecution(...)
+                                    MongoTaskDao.UPDATED_AT_TIME
+                            ),
+                            new IndexOptions()
+                                    .partialFilterExpression(
+                                            docBuilder()
+                                                    .put(MongoTaskDao.IS_AVAILABLE_FOR_EXECUTION, true)
+                                                    .put(MongoTaskDao.EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
+                                                    .build()
+                                    ).unique(false)
                     );
                 }
         );
