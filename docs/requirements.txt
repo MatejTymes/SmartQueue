@@ -7,6 +7,7 @@
                                                                 - add retry ability
                                                                 - task has body
                                                                 - when cancelling you need to provide the last ExecutionId
+                                                                - add availableSince field
 - implement ttl mechanism
 - enable multiple queues
 - define custom meta-fields to enable picking of next execution
@@ -25,6 +26,7 @@
 - add orphanage mechanism - if hasn't started after 1 minute consider orphan
 - add ability to record/not-record the execution history
 - add ability to pause agents
+- names of final states should be changeable/dynamic
 
 - implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
 - in memory daos - for quick tests

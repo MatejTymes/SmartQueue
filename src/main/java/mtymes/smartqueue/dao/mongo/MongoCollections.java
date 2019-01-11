@@ -28,7 +28,7 @@ public class MongoCollections {
                     tasks.createIndex(
                             ascending(
                                     // todo: make dynamic based on sorting in next createNextExecution(...)
-                                    MongoTaskDao.UPDATED_AT_TIME
+                                    MongoTaskDao.AVAILABLE_SINCE
                             ),
                             new IndexOptions()
                                     .partialFilterExpression(

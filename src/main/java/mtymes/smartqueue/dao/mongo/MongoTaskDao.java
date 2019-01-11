@@ -22,10 +22,11 @@ public class MongoTaskDao implements TaskDao {
 
     private static final String _ID = "_id";
     private static final String CREATED_AT_TIME = "createdAt";
-    static final String UPDATED_AT_TIME = "updatedAt";
+    private static final String UPDATED_AT_TIME = "updatedAt";
     private static final String STATE = "state";
 
     static final String IS_AVAILABLE_FOR_EXECUTION = "isAvailable";
+    static final String AVAILABLE_SINCE = "availableSince";
     static final String EXECUTION_ATTEMPTS_LEFT = "attemptsLeft";
 
     private static final String EXECUTIONS = "executions";
@@ -61,6 +62,7 @@ public class MongoTaskDao implements TaskDao {
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
+                .put(AVAILABLE_SINCE, now)
                 .put(EXECUTION_ATTEMPTS_LEFT, config.attemptCount)
                 .build());
 
@@ -93,6 +95,7 @@ public class MongoTaskDao implements TaskDao {
                         .put("$set", docBuilder()
                                 .put(STATE, TaskState.CANCELLED)
                                 .put(IS_AVAILABLE_FOR_EXECUTION, false)
+                                .put(AVAILABLE_SINCE, null)
                                 .put(UPDATED_AT_TIME, now)
                                 .build())
                         .build()
@@ -121,13 +124,14 @@ public class MongoTaskDao implements TaskDao {
                         .put("$inc", doc(EXECUTION_ATTEMPTS_LEFT, -1))
                         .put("$set", docBuilder()
                                 .put(IS_AVAILABLE_FOR_EXECUTION, false)
+                                .put(AVAILABLE_SINCE, null)
                                 .put(STATE, TaskState.RUNNING)
                                 .put(LAST_EXECUTION_ID, executionId)
                                 .put(UPDATED_AT_TIME, now)
                                 .build())
                         .build(),
                 // todo: test this
-                sortBy(doc(UPDATED_AT_TIME, 1))
+                sortBy(doc(AVAILABLE_SINCE, 1))
         );
 
         return Optional.ofNullable(document).map(doc -> {
@@ -188,6 +192,7 @@ public class MongoTaskDao implements TaskDao {
                                 .put(EXECUTIONS + ".$." + STATE, ExecutionState.FAILED)
                                 .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
                                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
+                                .put(AVAILABLE_SINCE, now)
                                 .build())
                         .build()
         ).getModifiedCount();
