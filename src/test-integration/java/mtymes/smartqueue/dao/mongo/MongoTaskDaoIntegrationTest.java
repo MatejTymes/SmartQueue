@@ -170,7 +170,29 @@ public class MongoTaskDaoIntegrationTest {
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
     }
 
-    // todo: cancel - with old executionId, with wrong executionId, with empty executionId if last execution exists
+    @Test
+    public void shouldNotCancelTaskWithoutAnyExecutionIfWrongLastExecutionIdIsProvided() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        TaskConfig taskConfig = commonTaskConfig();
+        TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
+
+        // When
+        Optional<ExecutionId> wrongLastExecutionId = Optional.of(randomExecutionId());
+        ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = taskDao.cancelTask(taskId, wrongLastExecutionId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        Task expectedTask = new Task(
+                taskId,
+                submissionTime,
+                submissionTime,
+                TaskState.SUBMITTED,
+                Optional.empty(),
+                emptyList()
+        );
+        assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
+    }
 
     @Test
     public void shouldNotCancelSuccessfulTask() {
@@ -270,6 +292,126 @@ public class MongoTaskDaoIntegrationTest {
                         failureTime,
                         ExecutionState.FAILED
                 ))
+        );
+        assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
+    }
+
+    @Test
+    public void shouldNotCancelFailedTaskIfRetryIsAvailableButWrongNoLastExecutionIdIsProvided() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        TaskConfig taskConfig = new TaskConfig(randomInt(2, 5));
+        TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
+        ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
+        ExecutionId executionId = taskDao.createNextExecution().get().executionId;
+        ZonedDateTime failureTime = clock.increaseBy(randomMillis());
+        taskDao.markAsFailed(executionId);
+        Optional<ExecutionId> lastExecutionId = Optional.of(executionId);
+
+        // When
+        Optional<ExecutionId> wrongLastExecutionId = Optional.empty();
+        ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = taskDao.cancelTask(taskId, wrongLastExecutionId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        Task expectedTask = new Task(
+                taskId,
+                submissionTime,
+                failureTime,
+                TaskState.FAILED,
+                lastExecutionId,
+                newList(new Execution(
+                        taskId,
+                        executionId,
+                        executionCreationTime,
+                        failureTime,
+                        ExecutionState.FAILED
+                ))
+        );
+        assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
+    }
+
+    @Test
+    public void shouldNotCancelFailedTaskIfRetryIsAvailableButWrongLastExecutionIdIsUsed() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        TaskConfig taskConfig = new TaskConfig(randomInt(2, 5));
+        TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
+        ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
+        ExecutionId executionId = taskDao.createNextExecution().get().executionId;
+        ZonedDateTime failureTime = clock.increaseBy(randomMillis());
+        taskDao.markAsFailed(executionId);
+        Optional<ExecutionId> lastExecutionId = Optional.of(executionId);
+
+        // When
+        Optional<ExecutionId> wrongLastExecutionId = Optional.of(randomExecutionId());
+        ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = taskDao.cancelTask(taskId, wrongLastExecutionId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        Task expectedTask = new Task(
+                taskId,
+                submissionTime,
+                failureTime,
+                TaskState.FAILED,
+                lastExecutionId,
+                newList(new Execution(
+                        taskId,
+                        executionId,
+                        executionCreationTime,
+                        failureTime,
+                        ExecutionState.FAILED
+                ))
+        );
+        assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
+    }
+
+    @Test
+    public void shouldNotCancelFailedTaskIfRetryIsAvailableButOldLastExecutionIdIsUsed() {
+        ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
+        TaskConfig taskConfig = new TaskConfig(randomInt(3, 5));
+        TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
+
+        ZonedDateTime executionCreationTime1 = clock.increaseBy(randomMillis());
+        ExecutionId executionId1 = taskDao.createNextExecution().get().executionId;
+        ZonedDateTime failureTime1 = clock.increaseBy(randomMillis());
+        taskDao.markAsFailed(executionId1);
+
+        ZonedDateTime executionCreationTime2 = clock.increaseBy(randomMillis());
+        ExecutionId executionId2 = taskDao.createNextExecution().get().executionId;
+        ZonedDateTime failureTime2 = clock.increaseBy(randomMillis());
+        taskDao.markAsFailed(executionId2);
+
+        Optional<ExecutionId> lastExecutionId = Optional.of(executionId2);
+
+        // When
+        Optional<ExecutionId> wrongLastExecutionId = Optional.of(executionId1);
+        ZonedDateTime cancellationTime = clock.increaseBy(randomMillis());
+        boolean wasSuccess = taskDao.cancelTask(taskId, wrongLastExecutionId);
+
+        // Then
+        assertThat(wasSuccess, is(false));
+        Task expectedTask = new Task(
+                taskId,
+                submissionTime,
+                failureTime2,
+                TaskState.FAILED,
+                lastExecutionId,
+                newList(
+                        new Execution(
+                                taskId,
+                                executionId1,
+                                executionCreationTime1,
+                                failureTime1,
+                                ExecutionState.FAILED
+                        ),
+                        new Execution(
+                                taskId,
+                                executionId2,
+                                executionCreationTime2,
+                                failureTime2,
+                                ExecutionState.FAILED
+                        ))
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
     }

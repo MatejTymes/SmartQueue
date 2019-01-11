@@ -6,7 +6,7 @@
                                                                 - rename JobRequest -> Task, Job -> Run, TAKEN -> RUNNING
                                                                 - add retry ability
                                                                 - task has body
-- when cancelling you need to provide the last ExecutionId
+                                                                - when cancelling you need to provide the last ExecutionId
 - implement ttl mechanism
 - enable multiple queues
 - define custom meta-fields to enable picking of next execution
