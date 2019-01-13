@@ -10,6 +10,7 @@
                                                                 - add availableSince field
 - implement ttl mechanism
 - enable multiple queues
+- add mongodb transaction support
 - define custom meta-fields to enable picking of next execution
     - filtering based on string value (e.g. group)
     - filtering based on string list value (e.g. labels)

@@ -2,6 +2,7 @@ package mtymes.smartqueue.dao;
 
 import mtymes.smartqueue.domain.*;
 
+import java.time.Duration;
 import java.util.Optional;
 
 public interface TaskDao {
@@ -19,4 +20,10 @@ public interface TaskDao {
     boolean markAsSucceeded(ExecutionId executionId);
 
     boolean markAsFailed(ExecutionId executionId);
+
+    boolean setTTL(TaskId taskId, Duration duration);
+
+    boolean keepForever(TaskId taskId);
+
+    Optional<Duration> getTTL(TaskId taskId);
 }

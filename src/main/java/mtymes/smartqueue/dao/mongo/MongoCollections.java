@@ -5,6 +5,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import org.bson.Document;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.mongodb.client.model.Indexes.ascending;
@@ -24,6 +25,12 @@ public class MongoCollections {
                                     MongoTaskDao.LAST_EXECUTION_ID
                             ),
                             new IndexOptions().unique(false)
+                    );
+                    tasks.createIndex(
+                            ascending(
+                                    MongoTaskDao.DELETE_AFTER
+                            ),
+                            new IndexOptions().expireAfter(0L, TimeUnit.SECONDS)
                     );
                     tasks.createIndex(
                             ascending(
@@ -47,7 +54,12 @@ public class MongoCollections {
                 database,
                 "bodies",
                 bodies -> {
-                    // no indexes needed
+                    bodies.createIndex(
+                            ascending(
+                                    MongoTaskDao.DELETE_AFTER
+                            ),
+                            new IndexOptions().expireAfter(0L, TimeUnit.SECONDS)
+                    );
                 }
         );
     }

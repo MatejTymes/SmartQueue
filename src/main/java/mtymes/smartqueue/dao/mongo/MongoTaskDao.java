@@ -8,6 +8,7 @@ import mtymes.smartqueue.dao.TaskDao;
 import mtymes.smartqueue.domain.*;
 import org.bson.Document;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.Optional;
@@ -35,6 +36,8 @@ public class MongoTaskDao implements TaskDao {
 
     private static final String CONTENT = "content";
 
+    static final String DELETE_AFTER = "deleteAfter";
+
     private final MongoCollection<Document> tasks;
     private final MongoCollection<Document> bodies;
 
@@ -51,10 +54,13 @@ public class MongoTaskDao implements TaskDao {
         TaskId taskId = TaskId.taskId(randomUUID());
 
         ZonedDateTime now = clock.now();
+
+        // todo: if supported put into transaction
         bodies.insertOne(docBuilder()
                 .put(_ID, taskId)
                 .put(CONTENT, body.content)
                 .put(CREATED_AT_TIME, now)
+                .put(UPDATED_AT_TIME, now)
                 .build());
         tasks.insertOne(docBuilder()
                 .put(_ID, taskId)
@@ -79,7 +85,6 @@ public class MongoTaskDao implements TaskDao {
         return one(bodies.find(doc(_ID, taskId))).map(this::toTaskBody);
     }
 
-    // todo: test the Optional<ExecutionId> lastAssumedExecutionId
     @Override
     public boolean cancelTask(TaskId taskId, Optional<ExecutionId> lastAssumedExecutionId) {
         ZonedDateTime now = clock.now();
@@ -87,18 +92,16 @@ public class MongoTaskDao implements TaskDao {
         long modifiedCount = tasks.updateOne(
                 docBuilder()
                         .put(_ID, taskId)
-                        .put(LAST_EXECUTION_ID, lastAssumedExecutionId.orElse(null)) // todo: test this
+                        .put(LAST_EXECUTION_ID, lastAssumedExecutionId.orElse(null))
                         .put(IS_AVAILABLE_FOR_EXECUTION, true)
                         .put(EXECUTION_ATTEMPTS_LEFT, doc("$gt", 0))
                         .build(),
-                docBuilder()
-                        .put("$set", docBuilder()
-                                .put(STATE, TaskState.CANCELLED)
-                                .put(IS_AVAILABLE_FOR_EXECUTION, false)
-                                .put(AVAILABLE_SINCE, null)
-                                .put(UPDATED_AT_TIME, now)
-                                .build())
-                        .build()
+                doc("$set", docBuilder()
+                        .put(STATE, TaskState.CANCELLED)
+                        .put(IS_AVAILABLE_FOR_EXECUTION, false)
+                        .put(AVAILABLE_SINCE, null)
+                        .put(UPDATED_AT_TIME, now)
+                        .build())
         ).getModifiedCount();
 
         return modifiedCount == 1;
@@ -159,14 +162,12 @@ public class MongoTaskDao implements TaskDao {
                                 .put(STATE, ExecutionState.CREATED)
                                 .build()))
                         .build(),
-                docBuilder()
-                        .put("$set", docBuilder()
-                                .put(STATE, TaskState.SUCCEEDED)
-                                .put(UPDATED_AT_TIME, now)
-                                .put(EXECUTIONS + ".$." + STATE, ExecutionState.SUCCEEDED)
-                                .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
-                                .build())
-                        .build()
+                doc("$set", docBuilder()
+                        .put(STATE, TaskState.SUCCEEDED)
+                        .put(UPDATED_AT_TIME, now)
+                        .put(EXECUTIONS + ".$." + STATE, ExecutionState.SUCCEEDED)
+                        .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
+                        .build())
         ).getModifiedCount();
 
         return modifiedCount == 1;
@@ -185,19 +186,87 @@ public class MongoTaskDao implements TaskDao {
                                 .put(STATE, ExecutionState.CREATED)
                                 .build()))
                         .build(),
-                docBuilder()
-                        .put("$set", docBuilder()
-                                .put(STATE, TaskState.FAILED)
-                                .put(UPDATED_AT_TIME, now)
-                                .put(EXECUTIONS + ".$." + STATE, ExecutionState.FAILED)
-                                .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
-                                .put(IS_AVAILABLE_FOR_EXECUTION, true)
-                                .put(AVAILABLE_SINCE, now)
-                                .build())
-                        .build()
+                doc("$set", docBuilder()
+                        .put(STATE, TaskState.FAILED)
+                        .put(UPDATED_AT_TIME, now)
+                        .put(EXECUTIONS + ".$." + STATE, ExecutionState.FAILED)
+                        .put(EXECUTIONS + ".$." + UPDATED_AT_TIME, now)
+                        .put(IS_AVAILABLE_FOR_EXECUTION, true)
+                        .put(AVAILABLE_SINCE, now)
+                        .build())
         ).getModifiedCount();
 
         return modifiedCount == 1;
+    }
+
+    // todo: test
+    @Override
+    public boolean setTTL(TaskId taskId, Duration duration) {
+        ZonedDateTime now = clock.now();
+        ZonedDateTime deleteAfter = now.plus(duration);
+
+        // todo: if supported put into transaction
+        long bodiesModifiedCount = bodies.updateOne(
+                doc(_ID, taskId),
+                doc("$set", docBuilder()
+                        .put(DELETE_AFTER, deleteAfter)
+                        .put(UPDATED_AT_TIME, now)
+                        .build())
+        ).getModifiedCount();
+        long tasksModifiedCount = tasks.updateOne(
+                doc(_ID, taskId),
+                doc("$set", docBuilder()
+                        .put(DELETE_AFTER, deleteAfter)
+                        .put(UPDATED_AT_TIME, now)
+                        .build())
+        ).getModifiedCount();
+
+        return bodiesModifiedCount == 1 && tasksModifiedCount == 1;
+    }
+
+    // todo: test
+    @Override
+    public boolean keepForever(TaskId taskId) {
+        ZonedDateTime now = clock.now();
+
+        // todo: if supported put into transaction
+        long bodiesModifiedCount = bodies.updateOne(
+                doc(_ID, taskId),
+                docBuilder()
+                        .put("$unset", doc(DELETE_AFTER, 1))
+                        .put("$set", doc(UPDATED_AT_TIME, now))
+                        .build()
+        ).getModifiedCount();
+        long tasksModifiedCount = tasks.updateOne(
+                doc(_ID, taskId),
+                docBuilder()
+                        .put("$unset", doc(DELETE_AFTER, 1))
+                        .put("$set", doc(UPDATED_AT_TIME, now))
+                        .build()
+        ).getModifiedCount();
+
+        return bodiesModifiedCount == 1 && tasksModifiedCount == 1;
+    }
+
+    // todo: test
+    @Override
+    public Optional<Duration> getTTL(TaskId taskId) {
+        Optional<ZonedDateTime> deleteTaskAfter = one(tasks.find(doc(_ID, taskId)))
+                .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
+        Optional<ZonedDateTime> deleteBodyAfter = one(bodies.find(doc(_ID, taskId)))
+                .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
+
+        ZonedDateTime now = clock.now();
+
+        Optional<Duration> taskTtl = deleteTaskAfter.map(time -> Duration.between(now, time));
+        Optional<Duration> bodyTtl = deleteBodyAfter.map(time -> Duration.between(now, time));
+
+        if (taskTtl.equals(bodyTtl)) {
+            return taskTtl;
+        } else {
+            // todo: throw InconsistentTTLException
+            throw new IllegalStateException(String.format("Difference in task '%s' vs body '%s' ttl", taskId, bodyTtl));
+        }
     }
 
     private Task toTask(Document doc) {

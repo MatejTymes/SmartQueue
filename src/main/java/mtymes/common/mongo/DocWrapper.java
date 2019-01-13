@@ -33,6 +33,14 @@ public class DocWrapper extends DataObject {
         return new DocWrapper(doc);
     }
 
+    public Boolean getBoolean(String fieldName) {
+        return getField(fieldName);
+    }
+
+    public Integer getInteger(String fieldName) {
+        return getField(fieldName);
+    }
+
     public String getString(String fieldName) {
         return getField(fieldName);
     }
