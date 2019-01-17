@@ -49,11 +49,13 @@ public class MongoTaskDao implements TaskDao {
         this.clock = clock;
     }
 
+    // todo: test ttl
     @Override
     public TaskId submitTask(TaskConfig config, TaskBody body) {
         TaskId taskId = TaskId.taskId(randomUUID());
 
         ZonedDateTime now = clock.now();
+        Optional<ZonedDateTime> deleteAfterIfDefined = config.ttl.map(ttl -> now.plus(ttl));
 
         // todo: if supported put into transaction
         bodies.insertOne(docBuilder()
@@ -61,6 +63,7 @@ public class MongoTaskDao implements TaskDao {
                 .put(CONTENT, body.content)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
+                .put(DELETE_AFTER, deleteAfterIfDefined)
                 .build());
         tasks.insertOne(docBuilder()
                 .put(_ID, taskId)
@@ -70,6 +73,7 @@ public class MongoTaskDao implements TaskDao {
                 .put(IS_AVAILABLE_FOR_EXECUTION, true)
                 .put(AVAILABLE_SINCE, now)
                 .put(EXECUTION_ATTEMPTS_LEFT, config.attemptCount)
+                .put(DELETE_AFTER, deleteAfterIfDefined)
                 .build());
 
         return taskId;

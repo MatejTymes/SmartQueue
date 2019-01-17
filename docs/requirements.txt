@@ -31,3 +31,4 @@
 
 - implement plug-able health check mechanism: healthy, cantDecide, timedOut, dead
 - in memory daos - for quick tests
+- rename to TaskQueue

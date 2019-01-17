@@ -18,11 +18,13 @@ import static java.util.Collections.emptyList;
 import static javafixes.common.CollectionUtil.newList;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.bodiesCollection;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.tasksCollection;
+import static mtymes.smartqueue.domain.TaskConfigBuilder.taskConfigBuilder;
 import static mtymes.test.OptionalMatcher.*;
 import static mtymes.test.Random.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+// todo: write a separate ttl test
 // todo: concurrency tests : combination of success / failure, cancel / running
 // todo: extract TaskDaoIntegrationTest - unrelated on mongo
 public class MongoTaskDaoIntegrationTest {
@@ -231,7 +233,9 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldNotCancelFailedTaskIfNoRetryIsAvailable() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        TaskConfig taskConfig = new TaskConfig(1);
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(1)
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
         ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
@@ -265,7 +269,9 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldCancelFailedTaskIfRetryIsAvailable() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        TaskConfig taskConfig = new TaskConfig(randomInt(2, 5));
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(randomInt(2, 5))
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
         ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
@@ -299,7 +305,9 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldNotCancelFailedTaskIfRetryIsAvailableButWrongNoLastExecutionIdIsProvided() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        TaskConfig taskConfig = new TaskConfig(randomInt(2, 5));
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(randomInt(2, 5))
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
         ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
@@ -334,7 +342,9 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldNotCancelFailedTaskIfRetryIsAvailableButWrongLastExecutionIdIsUsed() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        TaskConfig taskConfig = new TaskConfig(randomInt(2, 5));
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(randomInt(2, 5))
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
         ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
         ExecutionId executionId = taskDao.createNextExecution().get().executionId;
@@ -369,7 +379,9 @@ public class MongoTaskDaoIntegrationTest {
     @Test
     public void shouldNotCancelFailedTaskIfRetryIsAvailableButOldLastExecutionIdIsUsed() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        TaskConfig taskConfig = new TaskConfig(randomInt(3, 5));
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(randomInt(3, 5))
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
 
         ZonedDateTime executionCreationTime1 = clock.increaseBy(randomMillis());
@@ -637,7 +649,9 @@ public class MongoTaskDaoIntegrationTest {
         int attemptCount = randomInt(2, 5);
 
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
-        TaskConfig taskConfig = new TaskConfig(attemptCount);
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(attemptCount)
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
         ZonedDateTime executionCreationTime = clock.increaseBy(randomMillis());
         Execution execution = taskDao.createNextExecution().get();
@@ -723,7 +737,9 @@ public class MongoTaskDaoIntegrationTest {
     public void shouldNotRetryOnceTaskBecomesSuccessful() {
         int attemptCount = randomInt(3, 5);
 
-        TaskConfig taskConfig = new TaskConfig(attemptCount);
+        TaskConfig taskConfig = taskConfigBuilder()
+                .attemptCount(attemptCount)
+                .build();
         TaskId taskId = taskDao.submitTask(taskConfig, randomTaskBody());
         Execution execution1 = taskDao.createNextExecution().get();
         taskDao.markAsFailed(execution1.executionId);
@@ -741,6 +757,8 @@ public class MongoTaskDaoIntegrationTest {
     // todo: verify you can not change state of previous executions
 
     private TaskConfig commonTaskConfig() {
-        return new TaskConfig(randomInt(1, 5));
+        return taskConfigBuilder()
+                .attemptCount(randomInt(1, 5))
+                .build();
     }
 }
