@@ -170,6 +170,7 @@ public class MongoTaskDaoIntegrationTest {
                 emptyList()
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
+        assertThat(taskDao.createNextExecution(), isNotPresent());
     }
 
     @Test
@@ -300,10 +301,11 @@ public class MongoTaskDaoIntegrationTest {
                 ))
         );
         assertThat(taskDao.loadTask(taskId), isPresentAndEqualTo(expectedTask));
+        assertThat(taskDao.createNextExecution(), isNotPresent());
     }
 
     @Test
-    public void shouldNotCancelFailedTaskIfRetryIsAvailableButWrongNoLastExecutionIdIsProvided() {
+    public void shouldNotCancelFailedTaskIfRetryIsAvailableButNoLastExecutionIdIsProvided() {
         ZonedDateTime submissionTime = clock.increaseBy(randomMillis());
         TaskConfig taskConfig = taskConfigBuilder()
                 .attemptCount(randomInt(2, 5))
