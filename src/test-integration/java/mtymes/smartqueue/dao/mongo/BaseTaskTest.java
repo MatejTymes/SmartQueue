@@ -13,7 +13,6 @@ import static mtymes.test.Random.randomInt;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-// todo: implement
 public abstract class BaseTaskTest {
 
     protected abstract TaskId submitTask();
@@ -381,4 +380,6 @@ public abstract class BaseTaskTest {
         assertThat(noExecutionAnymore, isNotPresent());
         assertThat(loadTaskState(taskId), is(TaskState.SUCCEEDED));
     }
+
+    // todo: verify you can not change state of previous executions
 }
