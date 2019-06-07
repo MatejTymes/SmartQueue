@@ -25,7 +25,7 @@ import static mtymes.test.Random.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class TaskDaoIntegrationTest extends BaseTaskTest {
+public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
 
     private static EmbeddedDB db;
     private static FixedClock clock = new FixedClock();
