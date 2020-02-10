@@ -49,7 +49,6 @@ public class MongoTaskDao implements TaskDao {
         this.clock = clock;
     }
 
-    // todo: test ttl
     @Override
     public TaskId submitTask(TaskConfig config, TaskBody body) {
         TaskId taskId = TaskId.taskId(randomUUID());

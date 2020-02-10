@@ -15,10 +15,10 @@ import static mtymes.common.mongo.DocBuilder.docBuilder;
 
 public class MongoCollections {
 
-    public static MongoCollection<Document> tasksCollection(MongoDatabase database) {
+    public static MongoCollection<Document> tasksCollection(MongoDatabase database, String collectionName) {
         return getOrCreateCollection(
                 database,
-                "tasks",
+                collectionName,
                 tasks -> {
                     tasks.createIndex(
                             ascending(
@@ -49,10 +49,10 @@ public class MongoCollections {
         );
     }
 
-    public static MongoCollection<Document> bodiesCollection(MongoDatabase database) {
+    public static MongoCollection<Document> bodiesCollection(MongoDatabase database, String collectionName) {
         return getOrCreateCollection(
                 database,
-                "bodies",
+                collectionName,
                 bodies -> {
                     bodies.createIndex(
                             ascending(

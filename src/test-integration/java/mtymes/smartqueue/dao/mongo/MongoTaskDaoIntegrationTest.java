@@ -45,8 +45,8 @@ public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
         db = MongoManager.getEmbeddedDB();
         MongoDatabase database = db.getDatabase();
         taskDao = new MongoTaskDao(
-                tasksCollection(database),
-                bodiesCollection(database),
+                tasksCollection(database, "tasks"),
+                bodiesCollection(database, "bodies"),
                 clock
         );
     }

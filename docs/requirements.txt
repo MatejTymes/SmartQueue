@@ -9,7 +9,14 @@
                                                                 - when cancelling you need to provide the last ExecutionId
                                                                 - add availableSince field
                                                                 - implement ttl mechanism
-- enable multiple queues
+                                                                - enable multiple queues
+- feature:
+    - record past executions
+    - ttl
+    - heartbeat
+    - separate collection for body ???
+    - queryable fields
+    - encapsulate features in queue spec class
 - add ability to check for heart beat
     - add ability to record worker id (on sending heartbeat)
 - start using kotlin
