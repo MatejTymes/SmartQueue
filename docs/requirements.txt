@@ -8,9 +8,11 @@
                                                                 - task has body
                                                                 - when cancelling you need to provide the last ExecutionId
                                                                 - add availableSince field
-- implement ttl mechanism
-- start using kotlin
+                                                                - implement ttl mechanism
 - enable multiple queues
+- add ability to check for heart beat
+    - add ability to record worker id (on sending heartbeat)
+- start using kotlin
 - add mongodb transaction support
 - define custom meta-fields to enable picking of next execution
     - filtering based on string value (e.g. group)
@@ -18,8 +20,6 @@
     - sorting based on int value (e.g. priority)
     - sorting based on creation date
     - sorting based on last updated date
-- add ability to check for heart beat
-    - add ability to record worker id (on sending heartbeat)
 - implement plug-able limit mechanism
 - define client api
 - add local jvm client api

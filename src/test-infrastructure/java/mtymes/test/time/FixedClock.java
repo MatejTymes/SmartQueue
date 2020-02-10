@@ -24,6 +24,10 @@ public class FixedClock extends Clock {
         return now;
     }
 
+    public void setNow(ZonedDateTime now) {
+        this.now = now;
+    }
+
     public ZonedDateTime increaseBy(Duration duration) {
         ZonedDateTime newTime = now.plus(duration);
         this.now = newTime;

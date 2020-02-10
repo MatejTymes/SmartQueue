@@ -55,7 +55,7 @@ public class MongoTaskDao implements TaskDao {
         TaskId taskId = TaskId.taskId(randomUUID());
 
         ZonedDateTime now = clock.now();
-        Optional<ZonedDateTime> deleteAfterIfDefined = config.ttl.map(ttl -> now.plus(ttl));
+        Optional<ZonedDateTime> deleteAfterIfDefined = config.ttl.map(now::plus);
 
         // todo: if supported put into transaction
         bodies.insertOne(docBuilder()
@@ -269,7 +269,7 @@ public class MongoTaskDao implements TaskDao {
             return taskTtl;
         } else {
             // todo: throw InconsistentTTLException
-            throw new IllegalStateException(String.format("Difference in task '%s' vs body '%s' ttl", taskId, bodyTtl));
+            throw new IllegalStateException(String.format("Difference in task '%s' ttl '%s' vs body ttl '%s'", taskId, taskTtl, bodyTtl));
         }
     }
 

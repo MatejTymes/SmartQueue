@@ -7,30 +7,59 @@ import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import de.flapdoodle.embed.mongo.MongodStarter;
 import de.flapdoodle.embed.mongo.config.*;
+import de.flapdoodle.embed.mongo.distribution.Feature;
 import de.flapdoodle.embed.mongo.distribution.IFeatureAwareVersion;
-import de.flapdoodle.embed.mongo.distribution.Versions;
 import de.flapdoodle.embed.process.config.IRuntimeConfig;
-import de.flapdoodle.embed.process.distribution.GenericVersion;
 import de.flapdoodle.embed.process.extract.UserTempNaming;
 import de.flapdoodle.embed.process.io.directories.FixedPath;
+import org.bson.Document;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.EnumSet;
 
-import static de.flapdoodle.embed.mongo.distribution.Feature.*;
 import static de.flapdoodle.embed.process.runtime.Network.getFreeServerPort;
 import static de.flapdoodle.embed.process.runtime.Network.localhostIsIPv6;
+import static mtymes.common.mongo.DocBuilder.docBuilder;
 import static mtymes.common.mongo.DocBuilder.emptyDoc;
 
 // doc: https://github.com/flapdoodle-oss/de.flapdoodle.embed.mongo
 public class EmbeddedDB {
 
-    private static final IFeatureAwareVersion V3_4_9 = Versions.withFeatures(new GenericVersion("3.4.9"), SYNC_DELAY, STORAGE_ENGINE, ONLY_64BIT, NO_CHUNKSIZE_ARG, MONGOS_CONFIGDB_SET_STYLE);
+    public enum CustomVersion implements IFeatureAwareVersion {
 
-    // todo: mtymes - make work with newer versions of mongodb
-    private static final IFeatureAwareVersion USED_VERSION = V3_4_9;
-//    private static final IFeatureAwareVersion USED_VERSION = Version.V3_6_5;
+        //        V3_6_10("3.6.10", Feature.SYNC_DELAY, Feature.STORAGE_ENGINE, Feature.ONLY_64BIT, Feature.NO_CHUNKSIZE_ARG, Feature.MONGOS_CONFIGDB_SET_STYLE, Feature.NO_HTTP_INTERFACE_ARG, Feature.ONLY_WITH_SSL, Feature.ONLY_WINDOWS_2008_SERVER, Feature.NO_SOLARIS_SUPPORT, Feature.NO_BIND_IP_TO_LOCALHOST),
+        V4_0_12("4.0.12", Feature.SYNC_DELAY, Feature.STORAGE_ENGINE, Feature.ONLY_64BIT, Feature.NO_CHUNKSIZE_ARG, Feature.MONGOS_CONFIGDB_SET_STYLE, Feature.NO_HTTP_INTERFACE_ARG, Feature.ONLY_WITH_SSL, Feature.ONLY_WINDOWS_2008_SERVER, Feature.NO_SOLARIS_SUPPORT, Feature.NO_BIND_IP_TO_LOCALHOST);
+
+        private final String specificVersion;
+        private final EnumSet<Feature> features;
+
+        CustomVersion(String specificVersion, Feature... features) {
+            this.specificVersion = specificVersion;
+            this.features = Feature.asSet(features);
+        }
+
+
+        @Override
+        public boolean enabled(Feature feature) {
+            return features.contains(feature);
+        }
+
+        @Override
+        public EnumSet<Feature> getFeatures() {
+            return features;
+        }
+
+        @Override
+        public String asInDownloadPath() {
+            return specificVersion;
+        }
+    }
+
+
+    //    private static final IFeatureAwareVersion USED_VERSION = Version.V3_4_15;
+    private static final IFeatureAwareVersion USED_VERSION = CustomVersion.V4_0_12;
 
     private final int port;
     private final String dbName;
@@ -84,6 +113,8 @@ public class EmbeddedDB {
             IMongodConfig config = new MongodConfigBuilder()
                     .version(USED_VERSION)
                     .net(new Net("localhost", port, localhostIsIPv6()))
+//                    .setParameter("ttlMonitorSleepSecs", "5")
+//                    .setParameter("ttlMonitorSleepSecs", "0")
                     .build();
             Command command = Command.MongoD;
             IRuntimeConfig runtimeConfig = new RuntimeConfigBuilder()
@@ -122,6 +153,29 @@ public class EmbeddedDB {
             started = true;
 
             MongoClient client = new MongoClient("localhost", this.port);
+
+            // this doesn't seem to work
+            MongoDatabase adminDb = client.getDatabase("admin");
+//            Document response = adminDb.runCommand(
+//                    docBuilder()
+//                            .put("setParameter", 1)
+//                            .put("ttlMonitorEnabled", true)
+//                            .build()
+//            );
+            Document response = adminDb.runCommand(
+                    docBuilder()
+                            .put("setParameter", 1)
+//                            .put("ttlMonitorSleepSecs", 5)
+                            .put("ttlMonitorSleepSecs", 0)
+                            .build()
+            );
+//            Document response = adminDb.runCommand(
+//                    docBuilder()
+//                            .put("setParameter", 1)
+//                            .put("ttlMonitorEnabled", true)
+//                            .build()
+//            );
+
             database = client.getDatabase(dbName);
 
             return this;

@@ -1,6 +1,7 @@
 package mtymes.smartqueue.dao.mongo;
 
 import com.mongodb.client.MongoDatabase;
+import mtymes.smartqueue.dao.BaseTaskTest;
 import mtymes.smartqueue.domain.*;
 import mtymes.test.db.EmbeddedDB;
 import mtymes.test.db.MongoManager;
@@ -9,6 +10,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +19,7 @@ import java.util.Optional;
 import static com.google.common.collect.Maps.newHashMap;
 import static java.util.Collections.emptyList;
 import static javafixes.common.CollectionUtil.newList;
+import static mtymes.common.time.DateUtil.UTC_ZONE_ID;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.bodiesCollection;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.tasksCollection;
 import static mtymes.smartqueue.domain.TaskConfigBuilder.taskConfigBuilder;
@@ -25,6 +28,7 @@ import static mtymes.test.Random.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+//todo: maybe start recording ttl for testing purposes
 public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
 
     private static EmbeddedDB db;
@@ -48,12 +52,14 @@ public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         db.removeAllData();
 
         expectedTasks.clear();
         expectedTaskBodies.clear();
         executionIdToTaskIdMap.clear();
+
+        clock.setNow(ZonedDateTime.now(UTC_ZONE_ID));
     }
 
     @AfterClass
@@ -91,6 +97,11 @@ public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
         verifyEverythingIsAsExpected(taskId);
 
         return taskId;
+    }
+
+    @Override
+    protected boolean doesTaskExist(TaskId taskId) {
+        return taskDao.loadTask(taskId).isPresent();
     }
 
     @Override
@@ -271,6 +282,20 @@ public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
             throw new AssertionError("Task with TaskId '" + taskId + "' has no Execution");
         }
         throw new AssertionError("Task for TaskId '" + taskId + "' not found");
+    }
+
+    @Override
+    protected boolean setTtl(TaskId taskId, Duration ttl) {
+        return taskDao.setTTL(taskId, ttl);
+    }
+
+    @Override
+    protected void waitFor(Duration duration) {
+        try {
+            Thread.sleep(duration.toMillis());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void verifyEverythingIsAsExpected(TaskId taskId) {

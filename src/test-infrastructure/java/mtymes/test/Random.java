@@ -12,6 +12,10 @@ import java.util.function.Supplier;
 
 public class Random {
 
+    public static boolean randomBoolean() {
+        return pickRandomValue(true, false);
+    }
+
     @SafeVarargs
     public static int randomInt(int from, int to, Condition<Integer>... validityConditions) {
         return generateValidValue(
@@ -72,5 +76,10 @@ public class Random {
         } while (!valid);
 
         return value;
+    }
+
+    @SafeVarargs
+    public static <T> T pickRandomValue(T... values) {
+        return values[randomInt(0, values.length - 1)];
     }
 }
