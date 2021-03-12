@@ -4,6 +4,7 @@ import mtymes.common.time.Clock;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 import static mtymes.common.time.DateUtil.UTC_ZONE_ID;
 
@@ -12,7 +13,7 @@ public class FixedClock extends Clock {
     private volatile ZonedDateTime now;
 
     public FixedClock(ZonedDateTime now) {
-        this.now = now;
+        setNow(now);
     }
 
     public FixedClock() {
@@ -24,14 +25,14 @@ public class FixedClock extends Clock {
         return now;
     }
 
-    public void setNow(ZonedDateTime now) {
-        this.now = now;
+    public ZonedDateTime setNow(ZonedDateTime now) {
+        ZonedDateTime newTime = now.truncatedTo(ChronoUnit.MILLIS);
+        this.now = newTime;
+        return newTime;
     }
 
     public ZonedDateTime increaseBy(Duration duration) {
-        ZonedDateTime newTime = now.plus(duration);
-        this.now = newTime;
-        return newTime;
+        return setNow(now.plus(duration));
     }
 
     public ZonedDateTime increaseBySeconds(long seconds) {
