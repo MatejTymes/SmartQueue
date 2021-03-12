@@ -3,7 +3,6 @@ package mtymes.smartqueue.dao;
 import mtymes.smartqueue.domain.*;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.util.Optional;
 
 import static mtymes.smartqueue.domain.TaskConfigBuilder.taskConfigBuilder;
@@ -14,33 +13,7 @@ import static mtymes.test.Random.randomInt;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-public abstract class BaseTaskTest {
-
-    protected abstract TaskId submitTask();
-
-    protected abstract TaskId submitTask(TaskConfig taskConfig);
-
-    protected abstract boolean doesTaskExist(TaskId taskId);
-
-    protected abstract boolean cancelTask(TaskId taskId);
-
-    protected abstract boolean cancelTask(TaskId taskId, ExecutionId executionId);
-
-    protected abstract Optional<Execution> createNextExecution();
-
-    protected abstract boolean markAsSucceeded(ExecutionId executionId);
-
-    protected abstract boolean markAsFailed(ExecutionId executionId);
-
-    protected abstract TaskState loadTaskState(TaskId taskId);
-
-    protected abstract ExecutionState loadExecutionState(ExecutionId executionId);
-
-    protected abstract ExecutionId loadLastExecutionId(TaskId taskId);
-
-    protected abstract boolean setTtl(TaskId taskId, Duration ttl);
-
-    protected abstract void waitFor(Duration duration);
+public abstract class BaseTaskTest extends TaskHandlingTest {
 
     @Test
     public void shouldNotCreateExecutionIfNoTaskExists() {
@@ -390,53 +363,4 @@ public abstract class BaseTaskTest {
 
     // todo: verify you can not change state of previous executions
 
-    /* =========== */
-    /* --- ttl --- */
-    /* =========== */
-
-    @Test
-    public void shouldNotDeleteTaskWithoutTTL() {
-        Duration ttl = Duration.ofSeconds(randomInt(2, 4));
-
-        TaskId taskId = submitTask(taskConfigBuilder().build());
-
-        // When
-        waitFor(ttl.plusMinutes(1).plusSeconds(10));
-
-        // Then
-        assertThat(doesTaskExist(taskId), is(true));
-    }
-
-    @Test
-    public void shouldSubmitTaskWithTTL() throws InterruptedException {
-        Duration ttl = Duration.ofSeconds(randomInt(2, 4));
-
-        // When
-        TaskId taskId = submitTask(taskConfigBuilder()
-                .ttl(ttl)
-                .build());
-        // Then
-        assertThat(doesTaskExist(taskId), is(true));
-
-        // When
-//        waitFor(ttl.plusMinutes(2).plusSeconds(10));
-        waitFor(ttl.plusMinutes(1).plusSeconds(10));
-//        waitFor(ttl.plusSeconds(10));
-        // Then
-        assertThat(doesTaskExist(taskId), is(false));
-    }
-
-    @Test
-    public void shouldCountTTLFromTheMomentItWasSet() throws InterruptedException {
-        Duration ttl = Duration.ofSeconds(randomInt(2, 4));
-
-        TaskId taskId = submitTask(taskConfigBuilder().build());
-
-        waitFor(ttl.plusMinutes(1).plusSeconds(10));
-        setTtl(taskId, ttl);
-        assertThat(doesTaskExist(taskId), is(true));
-
-        waitFor(ttl.plusMinutes(1).plusSeconds(10));
-        assertThat(doesTaskExist(taskId), is(false));
-    }
 }

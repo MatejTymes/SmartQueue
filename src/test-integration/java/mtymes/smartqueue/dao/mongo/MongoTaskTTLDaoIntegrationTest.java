@@ -1,7 +1,7 @@
 package mtymes.smartqueue.dao.mongo;
 
 import com.mongodb.client.MongoDatabase;
-import mtymes.smartqueue.dao.BaseTaskTest;
+import mtymes.smartqueue.dao.BaseTaskTTLTest;
 import mtymes.smartqueue.taskHandler.TaskHandler;
 import mtymes.smartqueue.taskHandler.mongo.MongoTaskHandler;
 import mtymes.test.db.EmbeddedDB;
@@ -17,7 +17,7 @@ import static mtymes.common.time.DateUtil.UTC_ZONE_ID;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.bodiesCollection;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.tasksCollection;
 
-public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
+public class MongoTaskTTLDaoIntegrationTest extends BaseTaskTTLTest {
 
     private static final FixedClock clock = new FixedClock();
 
