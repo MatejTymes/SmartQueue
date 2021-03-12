@@ -4,7 +4,7 @@ package mtymes.test;
 import java.util.Set;
 import java.util.function.Function;
 
-import static javafixes.common.CollectionUtil.newSet;
+import static org.mockito.internal.util.collections.Sets.newSet;
 
 public interface Condition<T> extends Function<T, Boolean> {
 

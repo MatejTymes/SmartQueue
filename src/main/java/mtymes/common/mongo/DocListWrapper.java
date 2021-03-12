@@ -5,7 +5,7 @@ import org.bson.Document;
 import java.util.List;
 import java.util.function.Function;
 
-import static javafixes.common.CollectionUtil.newList;
+import static javafixes.collection.CollectionUtil.newList;
 
 // todo: mtymes - test this
 public class DocListWrapper {

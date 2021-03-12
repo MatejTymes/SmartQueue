@@ -11,12 +11,14 @@
                                                                 - implement ttl mechanism
                                                                 - enable multiple queues
 - feature:
+    - create object for features
     - record past executions
     - ttl
     - heartbeat
     - separate collection for body ???
     - queryable fields
     - encapsulate features in queue spec class
+    - set ttl on operations: cancel, markAsSucceeded, markAsFailed, sendHeartBeat
 - add ability to check for heart beat
     - add ability to record worker id (on sending heartbeat)
 - start using kotlin

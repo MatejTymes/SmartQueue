@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.mongodb.client.model.Indexes.ascending;
-import static javafixes.common.CollectionUtil.newSet;
+import static javafixes.collection.CollectionUtil.newSet;
 import static mtymes.common.mongo.DocBuilder.doc;
 import static mtymes.common.mongo.DocBuilder.docBuilder;
 

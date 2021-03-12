@@ -18,7 +18,7 @@ import java.util.Optional;
 
 import static com.google.common.collect.Maps.newHashMap;
 import static java.util.Collections.emptyList;
-import static javafixes.common.CollectionUtil.newList;
+import static javafixes.collection.CollectionUtil.newList;
 import static mtymes.common.time.DateUtil.UTC_ZONE_ID;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.bodiesCollection;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.tasksCollection;
