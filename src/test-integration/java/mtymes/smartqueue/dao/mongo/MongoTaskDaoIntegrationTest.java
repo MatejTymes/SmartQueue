@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 import static mtymes.common.time.DateUtil.UTC_ZONE_ID;
 import static mtymes.smartqueue.dao.mongo.MongoCollections.bodiesCollection;
@@ -31,7 +32,7 @@ public class MongoTaskDaoIntegrationTest extends BaseTaskTest {
         MongoDatabase database = db.getDatabase();
         MongoTaskDao taskDao = new MongoTaskDao(
                 tasksCollection(database, "tasks"),
-                bodiesCollection(database, "bodies"),
+                Optional.of(bodiesCollection(database, "bodies")),
                 clock
         );
 

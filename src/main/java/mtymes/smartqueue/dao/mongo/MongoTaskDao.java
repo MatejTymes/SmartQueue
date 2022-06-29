@@ -39,11 +39,15 @@ public class MongoTaskDao implements TaskDao {
     static final String DELETE_AFTER = "deleteAfter";
 
     private final MongoCollection<Document> tasks;
-    private final MongoCollection<Document> bodies;
+    private final Optional<MongoCollection<Document>> bodies;
 
     private final Clock clock;
 
-    public MongoTaskDao(MongoCollection<Document> tasks, MongoCollection<Document> bodies, Clock clock) {
+    public MongoTaskDao(
+            MongoCollection<Document> tasks,
+            Optional<MongoCollection<Document>> bodies,
+            Clock clock
+    ) {
         this.tasks = tasks;
         this.bodies = bodies;
         this.clock = clock;
@@ -57,15 +61,18 @@ public class MongoTaskDao implements TaskDao {
         Optional<ZonedDateTime> deleteAfterIfDefined = config.ttl.map(now::plus);
 
         // todo: if supported put into transaction
-        bodies.insertOne(docBuilder()
-                .put(_ID, taskId)
-                .put(CONTENT, body.content)
-                .put(CREATED_AT_TIME, now)
-                .put(UPDATED_AT_TIME, now)
-                .put(DELETE_AFTER, deleteAfterIfDefined)
-                .build());
+        if (bodies.isPresent()) {
+            bodies.get().insertOne(docBuilder()
+                    .put(_ID, taskId)
+                    .put(CONTENT, body.content)
+                    .put(CREATED_AT_TIME, now)
+                    .put(UPDATED_AT_TIME, now)
+                    .put(DELETE_AFTER, deleteAfterIfDefined)
+                    .build());
+        }
         tasks.insertOne(docBuilder()
                 .put(_ID, taskId)
+                .put(CONTENT, bodies.isPresent() ? Optional.empty() : body.content)
                 .put(CREATED_AT_TIME, now)
                 .put(UPDATED_AT_TIME, now)
                 .put(STATE, TaskState.SUBMITTED)
@@ -85,7 +92,7 @@ public class MongoTaskDao implements TaskDao {
 
     @Override
     public Optional<TaskBody> loadTaskBody(TaskId taskId) {
-        return one(bodies.find(doc(_ID, taskId))).map(this::toTaskBody);
+        return one(bodies.orElse(tasks).find(doc(_ID, taskId))).map(this::toTaskBody);
     }
 
     @Override
@@ -208,14 +215,20 @@ public class MongoTaskDao implements TaskDao {
         ZonedDateTime now = clock.now();
         ZonedDateTime deleteAfter = now.plus(duration);
 
+        boolean success = true;
+
         // todo: if supported put into transaction
-        long bodiesModifiedCount = bodies.updateOne(
-                doc(_ID, taskId),
-                doc("$set", docBuilder()
-                        .put(DELETE_AFTER, deleteAfter)
-                        .put(UPDATED_AT_TIME, now)
-                        .build())
-        ).getModifiedCount();
+        if (bodies.isPresent()) {
+            long bodiesModifiedCount = bodies.get().updateOne(
+                    doc(_ID, taskId),
+                    doc("$set", docBuilder()
+                            .put(DELETE_AFTER, deleteAfter)
+                            .put(UPDATED_AT_TIME, now)
+                            .build())
+            ).getModifiedCount();
+
+            success = success && bodiesModifiedCount == 1;
+        }
         long tasksModifiedCount = tasks.updateOne(
                 doc(_ID, taskId),
                 doc("$set", docBuilder()
@@ -224,7 +237,9 @@ public class MongoTaskDao implements TaskDao {
                         .build())
         ).getModifiedCount();
 
-        return bodiesModifiedCount == 1 && tasksModifiedCount == 1;
+        success = success && tasksModifiedCount == 1;
+
+        return success;
     }
 
     // todo: test
@@ -232,14 +247,20 @@ public class MongoTaskDao implements TaskDao {
     public boolean keepForever(TaskId taskId) {
         ZonedDateTime now = clock.now();
 
+        boolean success = true;
+
         // todo: if supported put into transaction
-        long bodiesModifiedCount = bodies.updateOne(
-                doc(_ID, taskId),
-                docBuilder()
-                        .put("$unset", doc(DELETE_AFTER, 1))
-                        .put("$set", doc(UPDATED_AT_TIME, now))
-                        .build()
-        ).getModifiedCount();
+        if (bodies.isPresent()) {
+            long bodiesModifiedCount = bodies.get().updateOne(
+                    doc(_ID, taskId),
+                    docBuilder()
+                            .put("$unset", doc(DELETE_AFTER, 1))
+                            .put("$set", doc(UPDATED_AT_TIME, now))
+                            .build()
+            ).getModifiedCount();
+
+            success = success && bodiesModifiedCount == 1;
+        }
         long tasksModifiedCount = tasks.updateOne(
                 doc(_ID, taskId),
                 docBuilder()
@@ -248,27 +269,40 @@ public class MongoTaskDao implements TaskDao {
                         .build()
         ).getModifiedCount();
 
-        return bodiesModifiedCount == 1 && tasksModifiedCount == 1;
+        success = success && tasksModifiedCount == 1;
+
+        return success;
     }
 
     // todo: test
     @Override
     public Optional<Duration> getTTL(TaskId taskId) {
-        Optional<ZonedDateTime> deleteTaskAfter = one(tasks.find(doc(_ID, taskId)))
-                .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
-        Optional<ZonedDateTime> deleteBodyAfter = one(bodies.find(doc(_ID, taskId)))
-                .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
+        if (!bodies.isPresent()) {
+            Optional<ZonedDateTime> deleteTaskAfter = one(tasks.find(doc(_ID, taskId)))
+                    .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
 
-        ZonedDateTime now = clock.now();
+            ZonedDateTime now = clock.now();
 
-        Optional<Duration> taskTtl = deleteTaskAfter.map(time -> Duration.between(now, time));
-        Optional<Duration> bodyTtl = deleteBodyAfter.map(time -> Duration.between(now, time));
+            Optional<Duration> taskTtl = deleteTaskAfter.map(time -> Duration.between(now, time));
 
-        if (taskTtl.equals(bodyTtl)) {
             return taskTtl;
         } else {
-            // todo: throw InconsistentTTLException
-            throw new IllegalStateException(String.format("Difference in task '%s' ttl '%s' vs body ttl '%s'", taskId, taskTtl, bodyTtl));
+            Optional<ZonedDateTime> deleteTaskAfter = one(tasks.find(doc(_ID, taskId)))
+                    .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
+            Optional<ZonedDateTime> deleteBodyAfter = one(bodies.get().find(doc(_ID, taskId)))
+                    .map(doc -> wrap(doc).getZonedDateTime(DELETE_AFTER));
+
+            ZonedDateTime now = clock.now();
+
+            Optional<Duration> taskTtl = deleteTaskAfter.map(time -> Duration.between(now, time));
+            Optional<Duration> bodyTtl = deleteBodyAfter.map(time -> Duration.between(now, time));
+
+            if (taskTtl.equals(bodyTtl)) {
+                return taskTtl;
+            } else {
+                // todo: throw InconsistentTTLException
+                throw new IllegalStateException(String.format("Difference in task '%s' ttl '%s' vs body ttl '%s'", taskId, taskTtl, bodyTtl));
+            }
         }
     }
 

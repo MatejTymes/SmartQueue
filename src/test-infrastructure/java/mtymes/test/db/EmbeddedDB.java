@@ -30,7 +30,8 @@ public class EmbeddedDB {
     public enum CustomVersion implements IFeatureAwareVersion {
 
         //        V3_6_10("3.6.10", Feature.SYNC_DELAY, Feature.STORAGE_ENGINE, Feature.ONLY_64BIT, Feature.NO_CHUNKSIZE_ARG, Feature.MONGOS_CONFIGDB_SET_STYLE, Feature.NO_HTTP_INTERFACE_ARG, Feature.ONLY_WITH_SSL, Feature.ONLY_WINDOWS_2008_SERVER, Feature.NO_SOLARIS_SUPPORT, Feature.NO_BIND_IP_TO_LOCALHOST),
-        V4_0_12("4.0.12", Feature.SYNC_DELAY, Feature.STORAGE_ENGINE, Feature.ONLY_64BIT, Feature.NO_CHUNKSIZE_ARG, Feature.MONGOS_CONFIGDB_SET_STYLE, Feature.NO_HTTP_INTERFACE_ARG, Feature.ONLY_WITH_SSL, Feature.ONLY_WINDOWS_2008_SERVER, Feature.NO_SOLARIS_SUPPORT, Feature.NO_BIND_IP_TO_LOCALHOST);
+        V4_0_12("4.0.12", Feature.SYNC_DELAY, Feature.STORAGE_ENGINE, Feature.ONLY_64BIT, Feature.NO_CHUNKSIZE_ARG, Feature.MONGOS_CONFIGDB_SET_STYLE, Feature.NO_HTTP_INTERFACE_ARG, Feature.ONLY_WITH_SSL, Feature.ONLY_WINDOWS_2008_SERVER, Feature.NO_SOLARIS_SUPPORT, Feature.NO_BIND_IP_TO_LOCALHOST),
+        V4_2_21("4.2.21", Feature.SYNC_DELAY, Feature.STORAGE_ENGINE, Feature.ONLY_64BIT, Feature.NO_CHUNKSIZE_ARG, Feature.MONGOS_CONFIGDB_SET_STYLE, Feature.NO_HTTP_INTERFACE_ARG, Feature.ONLY_WITH_SSL, Feature.ONLY_WINDOWS_2008_SERVER, Feature.NO_SOLARIS_SUPPORT, Feature.NO_BIND_IP_TO_LOCALHOST);
 
         private final String specificVersion;
         private final EnumSet<Feature> features;
@@ -60,6 +61,7 @@ public class EmbeddedDB {
 
     //    private static final IFeatureAwareVersion USED_VERSION = Version.V3_4_15;
     private static final IFeatureAwareVersion USED_VERSION = CustomVersion.V4_0_12;
+//    private static final IFeatureAwareVersion USED_VERSION = CustomVersion.V4_2_21;
 
     private final int port;
     private final String dbName;
@@ -124,6 +126,13 @@ public class EmbeddedDB {
                             .download(new DownloadConfigBuilder()
                                     .defaultsForCommand(command)
                                     .artifactStorePath(new FixedPath("build/mongo"))
+//                                    .packageResolver(new Paths(command) {
+//                                        @Override
+//                                        public String getPath(Distribution distribution) {
+//                                            return super.getPath(distribution);
+//                                        }
+//                                    })
+//                                    .downloadPath("https://fastdl.mongodb.org/win32/") // mongodb-win32-x86_64-2012plus-4.2.21.zip
                                     .build())
                             .executableNaming(new UserTempNaming() {
                                 @Override
